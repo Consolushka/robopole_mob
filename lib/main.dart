@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:robopole_mob/pages/field_passport.dart';
+import 'package:robopole_mob/pages/auth.dart';
 import 'package:robopole_mob/pages/fields.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 void main() {
@@ -10,9 +10,10 @@ void main() {
 
 class MyApp extends StatelessWidget {
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return MaterialApp(
       title: 'GoogleMaps',
+      theme: ThemeData(fontFamily: 'Roboto'),
       home: Home(),
     );
   }
@@ -25,37 +26,31 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
+class _HomeState extends State<Home>{
 
-  static const TextStyle optionStyle =
-  TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
+  void getUser() async{
+    final prefs = await SharedPreferences.getInstance();
+    final int? counter = prefs.getInt('userId');
+    if(counter != 0){
+      Navigator.pushAndRemoveUntil(context,
+          MaterialPageRoute(builder: (context) => MapSample()), (route) => false);
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
+  void initState(){
+    getUser();
+}
+
+  @override
+  Widget build(BuildContext context){
     return Scaffold(
-      body: MapSample(),
+      appBar: AppBar(
+        leading: Icon(FontAwesomeIcons.mobileScreen),
+        title: Text("РобоПоле"),
+        backgroundColor: Colors.deepOrangeAccent.withOpacity(0.8),
+      ),
+      body: Auth(),
     );
   }
 }
-
-
-// class MapScreen extends StatefulWidget {
-//   const MapScreen({Key? key}) : super(key: key);
-//
-//   @override
-//   State<MapScreen> createState() => _MapScreenState();
-// }
-//
-// class _MapScreenState extends State<MapScreen> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: GoogleMap(
-//         initialCameraPosition: CameraPosition(
-//           target: LatLng(54.3, 38.7),
-//           zoom: 11.5
-//         ),
-//       ));
-//   }
-// }
-//
