@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'GoogleMaps',
       theme: ThemeData(fontFamily: 'Roboto'),
-      home: Home(),
+      home: const Home(),
     );
   }
 }
@@ -26,31 +26,45 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
-class _HomeState extends State<Home>{
+class _HomeState extends State<Home> {
 
-  void getUser() async{
+  Future getUser() async {
     final prefs = await SharedPreferences.getInstance();
     final int? counter = prefs.getInt('userId');
-    if(counter != 0){
+    if (counter != 0) {
       Navigator.pushAndRemoveUntil(context,
-          MaterialPageRoute(builder: (context) => MapSample()), (route) => false);
+          MaterialPageRoute(builder: (context) => const MapSample()), (
+              route) => false);
     }
   }
 
   @override
-  void initState(){
-    getUser();
-}
+  Widget build(BuildContext context) {
+    Future login = getUser();
 
-  @override
-  Widget build(BuildContext context){
-    return Scaffold(
-      appBar: AppBar(
-        leading: Icon(FontAwesomeIcons.mobileScreen),
-        title: Text("РобоПоле"),
-        backgroundColor: Colors.deepOrangeAccent.withOpacity(0.8),
-      ),
-      body: Auth(),
+    return FutureBuilder(
+        future: login,
+        builder: (ctx, snapshot){
+          if (snapshot.connectionState == ConnectionState.done) {
+            return Scaffold(
+              appBar: AppBar(
+                leading: const Icon(FontAwesomeIcons.mobileScreen),
+                title: const Text("РобоПоле"),
+                backgroundColor: Colors.deepOrangeAccent.withOpacity(0.8),
+              ),
+              body: const Auth(),
+            );
+          }
+          else{
+            return const Scaffold(
+              backgroundColor: Colors.white,
+              body: Align(
+                alignment: Alignment.center,
+                child: Icon(FontAwesomeIcons.solidSun, size: 100, color: Colors.deepOrangeAccent,),
+              ),
+            );
+          }
+        }
     );
   }
-}
+  }
