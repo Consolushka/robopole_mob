@@ -3,49 +3,26 @@ import 'dart:convert';
 class User{
   int? ID;
   String? Name;
-  bool? IsActive;
-  String? Login;
-  String? Password;
-  int? RoleId;
+  String? Token;
   bool? MobileAccess;
+  int? RoleID;
 
-  User(String json){
-    try{
-      Map parsed = jsonDecode(jsonDecode(json));
+  User(this.ID, this.Name, this.MobileAccess, this.RoleID, this.Token);
 
-      ID = parsed["ID"];
-      Name = parsed["Name"];
-      IsActive = parsed["IsActive"];
-      Login = parsed["Login"];
-      Password = parsed["Password"];
-      RoleId = parsed["RoleID"];
-      MobileAccess = parsed["MobileAccess"];
-    }
-    catch(e){
-      return;
-    }
-  }
+  User.fromJson(String json){
+    final parsed = jsonDecode(json);
+    ID = parsed['id'];
+    Name = parsed['name'];
+    RoleID = parsed['roleID'];
+    MobileAccess = parsed["mobileAccess"];
+    Token = parsed['token'];
 
-  User.fromJson(string){
-    Map parsed = jsonDecode(string);
-
-
-    ID = parsed["ID"];
-    Name = parsed["Name"];
-    IsActive = parsed["IsActive"];
-    Login = parsed["Login"];
-    Password = parsed["Password"];
-    RoleId = parsed["RoleID"];
-    MobileAccess = parsed["MobileAccess"];
   }
 
   Map toJson()=>{
     "ID": ID,
     "Name": Name,
-    "IsActive": IsActive,
-    "Login": Login,
-    "Password": Password,
-    "RoleId": RoleId,
+    "RoleId": RoleID,
     "MobileAccess": MobileAccess
   };
 }
