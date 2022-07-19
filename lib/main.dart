@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:robopole_mob/classes.dart';
 import 'package:robopole_mob/pages/auth.dart';
 import 'package:robopole_mob/pages/fields.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 void main() {
   runApp(MyApp());
@@ -27,23 +29,29 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  final storage = FlutterSecureStorage();
 
   Future getUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final int? counter = prefs.getInt('userId');
-    if (counter != 0) {
-      Navigator.pushAndRemoveUntil(context,
-          MaterialPageRoute(builder: (context) => const MapSample()), (
-              route) => false);
+    final userJson = await storage.read(key: "User");
+    debugPrint(userJson);
+    if(userJson != null){
+      var user = User.fromJson(userJson);
+      if(user.ID != 0){
+        debugPrint("correct user");
+        Navigator.pushAndRemoveUntil(context,
+            MaterialPageRoute(builder: (context) => const MapSample()), (
+                route) => false);
+      }
+    }
+    else{
+      debugPrint("null");
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    Future login = getUser();
-
     return FutureBuilder(
-        future: login,
+        future: getUser(),
         builder: (ctx, snapshot){
           if (snapshot.connectionState == ConnectionState.done) {
             return Scaffold(
