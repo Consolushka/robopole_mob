@@ -8,7 +8,6 @@ import 'package:robopole_mob/classes.dart';
 import 'dart:convert';
 import 'package:robopole_mob/main.dart';
 import 'package:robopole_mob/utils.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -27,62 +26,117 @@ class MapSampleState extends State<MapSample> {
   int loadedFiledsPercentage = 0;
   User user = User(0,"",false,0,"");
   Set<Polygon> _polygons = {};
-  List<int> fields = [920, 1390, 1907,1909,1911,1912,1913,1914,1915,1917,1918,1919,1923,1924,1925,1926,1942,1943,1944,1945,1946,1947,1948,1949,1950,1951,1952,1953,1954,1956,1957,1958,1960,1962,1964,1969,1971,1973,1974,1976,1977,1982,1984,1985,1991,1996,1997,1998,2001,2002,2004,2005,2008,2009,2010,2015,2018,2024,2025,2026,2027,2029,2030,2031,2032,2033,2045,2086,2087,2088,2089,2091,2092,2098,2101,2103,2105,2116,2122,2123,2124,2125,2130,2136,2137,2138,2139,2140,2141,2142,2143,2144,2146,2147,2150,2151,2153,2168,2171, 944];
-  List<ListTile> partners = [];
+  List fields = [];
+  List<ListTile> partnersListTiles = [];
+
+  void showError(Error error){
+    showDialog(
+        context: context,
+        builder: (BuildContext context)=>AlertDialog(
+          title: const Text("Ошибка"),
+          content: Text(error.Message as String),
+          actions: [
+            ElevatedButton(
+                onPressed: ()=>Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                    primary: Colors.red
+                ),
+                child: const Text("Ok"))
+          ],
+        )
+    );
+  }
 
   Future<Set<Polygon>> loadFields() async{
+    var partnersStorage = await storage.read(key: "Partners");
+    String partnersJson = "";
     user = User.fromJson(await storage.read(key: "User") as String);
-    var part = await http.get(
-        Uri.parse("${Utils.uriAPI}partner/availablepartners"),
-        headers: {
-          HttpHeaders.authorizationHeader: user.Token as String,
-        });
 
-    var decodedPartners = jsonDecode(part.body) as List;
-    partners = [];
+    if(partnersStorage == null){
+      var part = await http.get(
+          Uri.parse("${Utils.uriAPI}partner/availablepartners"),
+          headers: {
+            HttpHeaders.authorizationHeader: user.Token as String,
+          });
+      if(part.statusCode==200){
+        partnersJson = part.body;
+        await storage.write(key: "Partners", value: part.body);
+      }
+      else{
+        var error = Error.fromResponse(part);
+        showError(error);
+        return _polygons;
+      }
+    }
+    else{
+      partnersJson = partnersStorage;
+    }
+
+
+    var decodedPartners = jsonDecode(partnersJson) as List;
+    partnersListTiles = [];
     decodedPartners.forEach((partner) {
-      partners.add(ListTile(
+      partnersListTiles.add(ListTile(
         title: Text(partner['name']),
+        onTap: (){
+          debugPrint(partner['id']);
+        },
       ));
     });
 
-    for(int i=0;i<fields.length;i++){
+    debugPrint(user.Token);
+    
+    var availableFields = await http.get(
+        Uri.parse("${Utils.uriAPI}field/fieldsCoordinatesByUser"),
+        headers: {
+          HttpHeaders.authorizationHeader: user.Token as String,
+        }
+    );
 
-      var fieldId = fields[i];
-      final response =
-      await http.get(Uri.parse(
-          'http://portal.robopole.ru/data/getgeobyyear/$fieldId?year=2022'));
-      if (response.statusCode == 200) {
-        print("Response status: ${response.statusCode}");
-        var coords = json.decode(response.body);
-        try{
-          Iterable feut = coords["features"][0]["geometry"]["coordinates"][0];
-          List<LatLng> polygonCoords = [];
-          feut.forEach((element) {
-            polygonCoords.add(LatLng(element[1], element[0]));
-          });
-          _polygons.add(Polygon(
-              polygonId: PolygonId('$fieldId'),
-              points: polygonCoords,
-              strokeWidth: 1,
-              strokeColor: Colors.deepOrangeAccent,
-              fillColor: Colors.amberAccent.withOpacity(0.5),
-              consumeTapEvents: true,
-              onTap: () {
-                Navigator.of(context).push(_createRoute(fieldId));
-              }));
-        }
-        catch(e){
-          continue;
-        }
+    if(availableFields.statusCode != 200){
+      var error = Error.fromResponse(availableFields);
+      showError(error);
+      return _polygons;
+    }
+
+    fields = jsonDecode(availableFields.body) as List;
+
+    for(int i=0;i<fields.length;i++){
+      var field = fields[i];
+      try{
+        var utfed = field["coordinates"];
+        var cors = jsonDecode(utfed) as List;
+        var cooooords = cors[0];
+        List<LatLng> polygonCoords = [];
+        cooooords.forEach((element) {
+          var c = element;
+          if(element[0] is double){
+            polygonCoords.add(LatLng(c[1], c[0]));
+          }
+          else{
+            c=element[0];
+            polygonCoords.add(LatLng(c[1], c[0]));
+          }
+        });
+        _polygons.add(Polygon(
+            polygonId: PolygonId('${field["fieldId"]}'),
+            points: polygonCoords,
+            strokeWidth: 1,
+            strokeColor: Colors.deepOrangeAccent,
+            fillColor: Colors.amberAccent.withOpacity(0.5),
+            consumeTapEvents: true,
+            onTap: () {
+              Navigator.of(context).push(_createRoute(field));
+            }));
+        print("object");
       }
-      else{
-        throw Exception("ex");
+      catch(e){
+        print(e.toString());
       }
     }
 
     print(_polygons.length);
-    print(partners.length);
+    print(partnersListTiles.length);
     return _polygons;
   }
 
@@ -95,67 +149,69 @@ class MapSampleState extends State<MapSample> {
       future: polys,
       builder: (ctx, snapshot){
         if(snapshot.connectionState == ConnectionState.done){
-          // return Test();
-          return Scaffold(
-            key: _scaffoldKey,
-            appBar: AppBar(
-              leading: IconButton(
-                  icon: const Icon(Icons.menu),
-                  onPressed: ()=> _scaffoldKey.currentState?.openDrawer(),
-              ),
-              title: const Text("Робополе 2022"),
-              backgroundColor: Colors.deepOrangeAccent,
-            ),
-            drawer: Drawer(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: <Widget>[
-                  DrawerHeader(
-                    decoration: const BoxDecoration(
-                      color: Colors.deepOrangeAccent,
-                    ),
-                    child: Container(
-                     alignment: Alignment.bottomLeft,
-                     child: Text(
-                       '${user.Name}',
-                       style: const TextStyle(
-                         color: Colors.white,
-                         fontSize: 24,
-                       ),
-                     ),
-                    )
+          return SafeArea(
+              child: Scaffold(
+                key: _scaffoldKey,
+                appBar: AppBar(
+                  leading: IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: ()=> _scaffoldKey.currentState?.openDrawer(),
                   ),
-                  Column(
-                    children: List.unmodifiable(partners),
-                  ),
+                  title: const Text("Робополе 2022"),
+                  backgroundColor: Colors.deepOrangeAccent,
+                ),
+                drawer: Drawer(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: <Widget>[
+                      DrawerHeader(
+                          decoration: const BoxDecoration(
+                            color: Colors.deepOrangeAccent,
+                          ),
+                          child: Container(
+                            alignment: Alignment.bottomLeft,
+                            child: Text(
+                              '${user.Name}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                              ),
+                            ),
+                          )
+                      ),
+                      Column(
+                        children: List.unmodifiable(partnersListTiles),
+                      ),
 
-                  ListTile(
-                    leading: const Icon(Icons.logout),
-                    title: const Text('Выйти'),
-                    onTap: () async {
-                      await storage.delete(key: "User");
-                      Navigator.pushAndRemoveUntil(context,
-                          MaterialPageRoute(builder: (context) => const Home()), (route) => false);
-                    },
+                      ListTile(
+                        leading: const Icon(Icons.logout),
+                        title: const Text('Выйти'),
+                        onTap: () async {
+                          await storage.delete(key: "User");
+                          await storage.delete(key: "Partners");
+                          Navigator.pushAndRemoveUntil(context,
+                              MaterialPageRoute(builder: (context) => const Home()), (route) => false);
+                        },
+                      ),
+                      const ListTile(
+                        leading: Icon(Icons.settings),
+                        title: Text('Settings'),
+                      ),
+                    ],
                   ),
-                  const ListTile(
-                    leading: Icon(Icons.settings),
-                    title: Text('Settings'),
+                ),
+                body: GoogleMap(
+                  polygons: _polygons,
+                  mapType: MapType.hybrid,
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: true,
+                  zoomControlsEnabled: true,
+                  initialCameraPosition: const CameraPosition(
+                    target: LatLng(54.8561, 38.2930),
+                    zoom: 10.0,
                   ),
-                ],
-              ),
-            ),
-            body: GoogleMap(
-              polygons: _polygons,
-              mapType: MapType.hybrid,
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true,
-              zoomControlsEnabled: true,
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(54.8561, 38.2930),
-                zoom: 10.0,
-              ),
-            ),
+                ),
+              )
           );
         }
         else{

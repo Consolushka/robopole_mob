@@ -43,3 +43,17 @@ class Partner{
   }
 
 }
+
+class Error{
+  int? StatusCode;
+  String? Message;
+  String? Path;
+
+  Error.fromResponse(response){
+    Map parsed = jsonDecode(utf8.decode(response.bodyBytes));
+
+    StatusCode = parsed["StatusCode"];
+    Message = parsed["Message"];
+    Path = parsed["Path"];
+  }
+}

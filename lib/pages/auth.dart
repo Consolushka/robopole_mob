@@ -3,9 +3,7 @@ import 'package:robopole_mob/classes.dart';
 import 'package:robopole_mob/pages/fields.dart';
 import 'package:http/http.dart' as http;
 import 'package:robopole_mob/utils.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class Auth extends StatefulWidget {
@@ -47,7 +45,10 @@ class _AuthState extends State<Auth> {
       }
     }
     else{
-      errorMessage = response.body;
+      debugPrint(response.body);
+      debugPrint(utf8.decode(response.bodyBytes));
+      var error = Error.fromResponse(response);
+      errorMessage = "${error.Message} при обращаении к ${error.Path}";
       showErrorDialog();
     }
   }
