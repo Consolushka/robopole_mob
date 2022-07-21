@@ -27,6 +27,7 @@ class MapSampleState extends State<MapSample> {
   User user = User(0,"",false,0,"");
   Set<Polygon> _polygons = {};
   List fields = [];
+  List partners = [];
   List<ListTile> partnersListTiles = [];
 
   void showError(Error error){
@@ -47,14 +48,35 @@ class MapSampleState extends State<MapSample> {
     );
   }
 
-  Future<Set<Polygon>> loadFields() async{
+  void filterPolygonsByPartner(int partnerId) async{
+    if(partnerId==0){
+      await storage.delete(key: "selectedPartnerId");
+    }
+    else{
+      await storage.write(key: "selectedPartnerId", value: partnerId.toString());
+    }
+    setState((){});
+  }
+
+  @override
+  void initState(){
+    partnersListTiles.add(ListTile(
+      title: const Text("Показать все"),
+      onTap: (){
+        filterPolygonsByPartner(0);
+      },
+    ));
+    super.initState();
+  }
+
+  Future loadPartners() async{
     var partnersStorage = await storage.read(key: "Partners");
     String partnersJson = "";
     user = User.fromJson(await storage.read(key: "User") as String);
 
     if(partnersStorage == null){
       var part = await http.get(
-          Uri.parse("${Utils.uriAPI}partner/availablepartners"),
+          Uri.parse("${Utils.uriAPI}partner/get-available-partners"),
           headers: {
             HttpHeaders.authorizationHeader: user.Token as String,
           });
@@ -65,7 +87,6 @@ class MapSampleState extends State<MapSample> {
       else{
         var error = Error.fromResponse(part);
         showError(error);
-        return _polygons;
       }
     }
     else{
@@ -74,35 +95,69 @@ class MapSampleState extends State<MapSample> {
 
 
     var decodedPartners = jsonDecode(partnersJson) as List;
-    partnersListTiles = [];
+
     decodedPartners.forEach((partner) {
       partnersListTiles.add(ListTile(
         title: Text(partner['name']),
         onTap: (){
-          debugPrint(partner['id']);
+          filterPolygonsByPartner(partner['id']);
         },
       ));
     });
+  }
 
-    debugPrint(user.Token);
-    
-    var availableFields = await http.get(
-        Uri.parse("${Utils.uriAPI}field/fieldsCoordinatesByUser"),
-        headers: {
-          HttpHeaders.authorizationHeader: user.Token as String,
-        }
-    );
+  Future loadFields() async{
+    user = User.fromJson(await storage.read(key: "User") as String);
 
-    if(availableFields.statusCode != 200){
-      var error = Error.fromResponse(availableFields);
-      showError(error);
-      return _polygons;
+    var fieldsStorage = await storage.read(key: "Fields");
+    String fieldsJson = "";
+
+    if(fieldsStorage == null){
+      debugPrint("empty storage");
+      var availableFields = await http.get(
+          Uri.parse("${Utils.uriAPI}field/get-available-fieldsCoords-byUser"),
+          headers: {
+            HttpHeaders.authorizationHeader: user.Token as String,
+          }
+      );
+
+      if(availableFields.statusCode != 200){
+        var error = Error.fromResponse(availableFields);
+        showError(error);
+      }
+
+      fieldsJson = availableFields.body;
+      await storage.write(key: "Fields", value: fieldsJson);
+    }
+    else{
+      fieldsJson = fieldsStorage;
+      debugPrint("not empty storage");
     }
 
-    fields = jsonDecode(availableFields.body) as List;
+    fields = jsonDecode(fieldsJson) as List;
+  }
+
+  Future<Set<Polygon>> createPolygons() async{
+    if(partnersListTiles.length == 1){
+      await loadPartners();
+    }
+
+    if(_polygons.isEmpty){
+      await loadFields();
+    }
+
+
+    var selectedPartnerId =await storage.read(key: "selectedPartnerId");
+    _polygons = {};
 
     for(int i=0;i<fields.length;i++){
       var field = fields[i];
+
+      if(selectedPartnerId != null){
+        if(field["partnerID"].toString() != selectedPartnerId){
+          continue;
+        }
+      }
       try{
         var utfed = field["coordinates"];
         var cors = jsonDecode(utfed) as List;
@@ -118,31 +173,33 @@ class MapSampleState extends State<MapSample> {
             polygonCoords.add(LatLng(c[1], c[0]));
           }
         });
-        _polygons.add(Polygon(
-            polygonId: PolygonId('${field["fieldId"]}'),
+        var poly = Polygon(
+            polygonId: PolygonId('${field["fieldID"]}'),
             points: polygonCoords,
             strokeWidth: 1,
             strokeColor: Colors.deepOrangeAccent,
             fillColor: Colors.amberAccent.withOpacity(0.5),
             consumeTapEvents: true,
             onTap: () {
-              Navigator.of(context).push(_createRoute(field));
-            }));
-        print("object");
+              Navigator.of(context).push(_createRoute(field["fieldID"]));
+            });
+        _polygons.add(poly);
       }
       catch(e){
-        print(e.toString());
+        debugPrint("Caused error with field ${field["fieldID"]}. ${e.toString()}");
       }
     }
 
+    print(fields.length);
     print(_polygons.length);
     print(partnersListTiles.length);
+
     return _polygons;
   }
 
   @override
   Widget build(BuildContext context) {
-    Future<Set<Polygon>> polys = loadFields();
+    Future<Set<Polygon>> polys = createPolygons();
 
 
     return FutureBuilder(
@@ -189,6 +246,7 @@ class MapSampleState extends State<MapSample> {
                         onTap: () async {
                           await storage.delete(key: "User");
                           await storage.delete(key: "Partners");
+                          await storage.delete(key: "Fields");
                           Navigator.pushAndRemoveUntil(context,
                               MaterialPageRoute(builder: (context) => const Home()), (route) => false);
                         },
