@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -6,6 +7,24 @@ import 'dart:convert';
 import 'package:robopole_mob/classes.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/utils.dart';
+import 'package:workmanager/workmanager.dart';
+
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+      var resp = await http.post(
+        Uri.parse("${Utils.uriAPI}field/confirm-field-culture"),
+          headers: {
+            "Authorization": inputData!['token'] as String,
+            "Content-Type": "application/json"
+          },
+          body: jsonEncode(
+          {'fieldId': inputData['fieldId'], 'fieldCultureId': inputData['cultureId']})
+      );
+      debugPrint(resp.body);
+      debugPrint("Confirmed");
+    return Future.value(true);
+  });
+}
 
 class FieldPassport extends StatefulWidget {
   int id;
@@ -24,30 +43,15 @@ class _FieldPassportState extends State<FieldPassport> {
   Completer<GoogleMapController> _controller = Completer();
 
   Future<Map<int, List<LatLng>>> fetchPost() async {
-    var user = User.fromJson(await storage.read(key: "User") as String);
-
-    final response =await http.get(
-        Uri.parse("${Utils.uriAPI}field/get-field-data?fieldId=${widget.id.toString()}&year=2022"),
-        headers: {
-          "Authorization": user.Token as String,
-        }
-    );
-    if (response.statusCode == 200) {
-      Map<int, List<LatLng>> p = <int, List<LatLng>>{};
-      print(response.body);
-      var coords = json.decode(response.body);
-      field = coords;
-
-      var mapCenter = (coords["mapCenter"] as String).split(",");
-      var numbers = [];
-      mapCenter.forEach((element) {
-        var str = element.substring(1,element.length-1).replaceAll(",", ".").trim();
-        numbers.add(double.parse(str));
-        print(str);
-      });
-      
-      currentLatLng = new LatLng(numbers[0], numbers[1]);
-      var cooooords = jsonDecode(coords["coordinates"])[0];
+    var fieldsStorage = await storage.read(key: "Fields");
+    var fields = jsonDecode(fieldsStorage as String) as List;
+    Map<int, List<LatLng>> p = <int, List<LatLng>>{};
+    for(int i=0;i<fields.length-1;i++){
+      if(fields[i]["id"] ==widget.id){
+        field = fields[i];
+      }
+    }
+      var cooooords = jsonDecode(field["coordinates"])[0];
       List<LatLng> polygonCoords = [];
       cooooords.forEach((element) {
         var c = element;
@@ -60,19 +64,16 @@ class _FieldPassportState extends State<FieldPassport> {
         }
       });
       ass[widget.id] = polygonCoords;
+      currentLatLng = LatLng(polygonCoords[0].latitude, polygonCoords[0].longitude);
+
       return p;
-
-    } else {
-      // If that call was not successful, throw an error.
-
-      print(response.body);
-      throw Exception("asdasd");
-    }
   }
 
   Widget FieldMap(){
     debugPrint(field["externalName"]);
-
+    // setState((){
+    //   WiFiForIoTPlugin.setEnabled(false);
+    // });
     return Container(
       height: 200,
       child: GoogleMap(
@@ -96,29 +97,106 @@ class _FieldPassportState extends State<FieldPassport> {
       ),);
   }
 
-  List<Widget> FieldInfo(){
+  List<Widget> createInput(String jsonProperty, String propertyName){
+    var prop = field[jsonProperty].toString();
+
     return [
+      const SizedBox(height: 10),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: Text(propertyName, style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),),
+      ),
       TextFormField(
-        enabled: false,
-        enableSuggestions: false,
-        autocorrect: false,
-        initialValue: utf8.decode(field["externalName"]),
-        style: const TextStyle(fontSize: 20),
-        decoration: InputDecoration(
-          hintText: 'Идентификатор',
-          contentPadding: const EdgeInsets.all(10),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(50),
-              borderSide:
-              const BorderSide(color: Colors.black54, width: 2)),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(50),
-              borderSide: BorderSide(
-                  color: Colors.deepOrangeAccent.withOpacity(0.5),
-                  width: 2)),
-        ),
-      )
+      enabled: false,
+      enableSuggestions: false,
+      autocorrect: false,
+      initialValue: prop,
+      style: const TextStyle(fontSize: 20),
+      decoration: InputDecoration(
+        hintText: propertyName,
+        contentPadding: const EdgeInsets.all(10),
+        disabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(5),
+            borderSide:
+            BorderSide(color: Colors.black54.withOpacity(0.5), width: 1))
+      ),
+    )];
+  }
+
+  List<Widget> FieldInfo(){
+    Workmanager().initialize(
+        callbackDispatcher, // The top level function, aka callbackDispatcher
+        isInDebugMode: true // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
+    );
+    List<Widget> res = [
+      const SizedBox(height: 20)
     ];
+    createInput("externalName", "Идентификатор").forEach((element) {
+      res.add(element);
+    });
+    createInput("partnerName", "Владелец").forEach((element) {
+      res.add(element);
+    });
+    createInput("usingByPartnerName", "Пользователь").forEach((element) {
+      res.add(element);
+    });
+    createInput("agroSize", "Площадь от агронома").forEach((element) {
+      res.add(element);
+    });
+    createInput("calculatedArea", "Расчитанная площадь").forEach((element) {
+      res.add(element);
+    });
+    res.add(SizedBox(height: 30,));
+    createInput("agroCultureName", "Культура").forEach((element) {
+      res.add(element);
+    });
+    res.add(
+      ElevatedButton(
+
+          onPressed: () async {
+            var user = User.fromJson(await storage.read(key: "User") as String);
+            Workmanager().cancelAll();
+            Workmanager().registerPeriodicTask(
+                "per-task.20.25",
+                "per-task.20.11-18.40",
+                initialDelay: Duration(seconds: 1),
+                inputData: <String, dynamic>{
+                      "fieldId": widget.id,
+                      "cultureId": 232,
+                      "token": user.Token
+                },
+                constraints: Constraints(networkType: NetworkType.connected));
+            // try {
+            //   var resp = await http.post(
+            //     Uri.parse("${Utils.uriAPI}field/confirm-field-culture"),
+            //       headers: {
+            //         "Authorization": user.Token as String,
+            //         "Content-Type": "application/json"
+            //       },
+            //       body: jsonEncode(
+            //       {'fieldId': widget.id, 'fieldCultureId': widget.id})
+            //   );
+            //   debugPrint(resp.body);
+            //   debugPrint("Confirmed");
+            // }
+            // on SocketException catch (e){
+            //   debugPrint("Socket: $e");
+            // }
+          },
+          style: ElevatedButton.styleFrom(
+              primary: Colors.green,
+              padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30))),
+          child: const Text(
+            "Подтвердить культуру",
+            style: TextStyle(fontSize: 20),
+          )),
+    );
+    res.add(
+      SizedBox(height: 20)
+    );
+    return res;
   }
 
   @override
@@ -134,40 +212,18 @@ class _FieldPassportState extends State<FieldPassport> {
               title: Text("Поле ${widget.id}"),
               backgroundColor: Colors.deepOrangeAccent,
             ),
-            body: Column(
-              children: [
-                FieldMap(),
-                Container(
-                  margin: EdgeInsets.only(left: 10, right: 10),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text("Идентификатор", style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),),
-                      ),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        style: const TextStyle(fontSize: 20),
-                        enabled: false,
-                        initialValue: field["externalName"],
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.all(10),
-                          enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(50),
-                              borderSide:
-                              const BorderSide(color: Colors.black54, width: 2)),
-                          focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(50),
-                              borderSide: BorderSide(
-                                  color: Colors.deepOrangeAccent.withOpacity(0.5),
-                                  width: 2)),
-                        ),
-                      )
-                    ],
-                  ),
-                )
-              ],
+            body: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // FieldMap(),
+                  Container(
+                    margin: EdgeInsets.only(left: 10, right: 10),
+                    child: Column(
+                        children: FieldInfo()
+                    ),
+                  )
+                ],
+              ),
             )
           );
         }

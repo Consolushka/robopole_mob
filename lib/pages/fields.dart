@@ -138,7 +138,7 @@ class MapSampleState extends State<MapSample> {
   }
 
   Future<Set<Polygon>> createPolygons() async{
-    if(partnersListTiles.length == 1){
+    if(partnersListTiles.length <= 1){
       await loadPartners();
     }
 
@@ -154,7 +154,7 @@ class MapSampleState extends State<MapSample> {
       var field = fields[i];
 
       if(selectedPartnerId != null){
-        if(field["partnerID"].toString() != selectedPartnerId){
+        if(field["usingByPartnerID"].toString() != selectedPartnerId){
           continue;
         }
       }
@@ -173,15 +173,17 @@ class MapSampleState extends State<MapSample> {
             polygonCoords.add(LatLng(c[1], c[0]));
           }
         });
+        var id = field["id"];
+
         var poly = Polygon(
-            polygonId: PolygonId('${field["fieldID"]}'),
+            polygonId: PolygonId('${field["id"]}'),
             points: polygonCoords,
             strokeWidth: 1,
             strokeColor: Colors.deepOrangeAccent,
             fillColor: Colors.amberAccent.withOpacity(0.5),
             consumeTapEvents: true,
             onTap: () {
-              Navigator.of(context).push(_createRoute(field["fieldID"]));
+              Navigator.of(context).push(_createRoute(field["id"]));
             });
         _polygons.add(poly);
       }
@@ -245,15 +247,26 @@ class MapSampleState extends State<MapSample> {
                         title: const Text('Выйти'),
                         onTap: () async {
                           await storage.delete(key: "User");
+                          partners = [];
                           await storage.delete(key: "Partners");
+                          fields = [];
                           await storage.delete(key: "Fields");
                           Navigator.pushAndRemoveUntil(context,
                               MaterialPageRoute(builder: (context) => const Home()), (route) => false);
                         },
                       ),
-                      const ListTile(
-                        leading: Icon(Icons.settings),
-                        title: Text('Settings'),
+                      ListTile(
+                        leading: Icon(Icons.restore_from_trash),
+                        title: Text('Обновить данные'),
+                        onTap: () async {
+                          partnersListTiles = [];
+                          _polygons = {};
+                          partners = [];
+                          fields = [];
+                          await storage.delete(key: "Partners");
+                          await storage.delete(key: "Fields");
+                          setState(() {});
+                        }
                       ),
                     ],
                   ),
