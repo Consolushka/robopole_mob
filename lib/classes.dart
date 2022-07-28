@@ -57,3 +57,34 @@ class Error{
     Path = parsed["Path"];
   }
 }
+
+class AgroCulture{
+  int? ID;
+  String? Name;
+  bool? IsActive;
+  String? Color;
+  int? ParentID;
+  int? Level;
+  int? Order;
+
+  AgroCulture.fromJson(json){
+    Map parsed = jsonDecode(json);
+    ID = parsed["id"];
+    Name = parsed["name"];
+    IsActive = parsed["isActive"];
+    Color = parsed["color"];
+    ParentID = parsed["parentID"];
+    Level = parsed["level"];
+    Order = parsed["order"];
+  }
+
+  AgroCulture.fromMap(map){
+    ID = map["id"];
+    Name = map["name"];
+    IsActive = map["isActive"];
+    Color = map["color"];
+    ParentID = map["parentID"];
+    Level = map["level"];
+    Order = map["order"];
+  }
+}

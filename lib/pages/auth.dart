@@ -34,6 +34,16 @@ class _AuthState extends State<Auth> {
       if (user.MobileAccess as bool) {
         await storage.write(key: "User", value: user.toJson());
 
+        var response = await http.get(
+            Uri.parse('${Utils.uriAPI}locationCulture/get-all-cultures'),
+            headers: {
+              "Authorization": user.Token as String
+            }
+        );
+        if(response.statusCode == 200){
+          await storage.write(key: "Cultures", value: response.body);
+        }
+
         Navigator.pushAndRemoveUntil(context,
             MaterialPageRoute(builder: (context) => const MapSample()), (
                 route) => false);

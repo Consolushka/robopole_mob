@@ -173,8 +173,6 @@ class MapSampleState extends State<MapSample> {
             polygonCoords.add(LatLng(c[1], c[0]));
           }
         });
-        var id = field["id"];
-
         var poly = Polygon(
             polygonId: PolygonId('${field["id"]}'),
             points: polygonCoords,
@@ -212,11 +210,7 @@ class MapSampleState extends State<MapSample> {
               child: Scaffold(
                 key: _scaffoldKey,
                 appBar: AppBar(
-                  leading: IconButton(
-                    icon: const Icon(Icons.menu),
-                    onPressed: ()=> _scaffoldKey.currentState?.openDrawer(),
-                  ),
-                  title: const Text("Робополе 2022"),
+                  title: Text("Робополе 2022"),
                   backgroundColor: Colors.deepOrangeAccent,
                 ),
                 drawer: Drawer(
@@ -263,6 +257,7 @@ class MapSampleState extends State<MapSample> {
                           _polygons = {};
                           partners = [];
                           fields = [];
+                          await storage.delete(key: "selectedPartnerId");
                           await storage.delete(key: "Partners");
                           await storage.delete(key: "Fields");
                           setState(() {});

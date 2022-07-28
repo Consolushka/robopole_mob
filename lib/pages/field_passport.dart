@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -22,6 +21,7 @@ void callbackDispatcher() {
       );
       debugPrint(resp.body);
       debugPrint("Confirmed");
+      Workmanager().cancelAll();
     return Future.value(true);
   });
 }
@@ -166,22 +166,6 @@ class _FieldPassportState extends State<FieldPassport> {
                       "token": user.Token
                 },
                 constraints: Constraints(networkType: NetworkType.connected));
-            // try {
-            //   var resp = await http.post(
-            //     Uri.parse("${Utils.uriAPI}field/confirm-field-culture"),
-            //       headers: {
-            //         "Authorization": user.Token as String,
-            //         "Content-Type": "application/json"
-            //       },
-            //       body: jsonEncode(
-            //       {'fieldId': widget.id, 'fieldCultureId': widget.id})
-            //   );
-            //   debugPrint(resp.body);
-            //   debugPrint("Confirmed");
-            // }
-            // on SocketException catch (e){
-            //   debugPrint("Socket: $e");
-            // }
           },
           style: ElevatedButton.styleFrom(
               primary: Colors.green,
@@ -215,7 +199,7 @@ class _FieldPassportState extends State<FieldPassport> {
             body: SingleChildScrollView(
               child: Column(
                 children: [
-                  // FieldMap(),
+                  FieldMap(),
                   Container(
                     margin: EdgeInsets.only(left: 10, right: 10),
                     child: Column(
