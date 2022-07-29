@@ -1,13 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:robopole_mob/classes.dart';
-import 'package:robopole_mob/pages/auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:robopole_mob/utils.dart';
+import 'package:camera/camera.dart';
 
-void main() {
+List<CameraDescription> cameras = [];
+
+Future<void> main() async {
+
+  // Ensure that plugin services are initialized so that `availableCameras()`
+  // can be called before `runApp()`
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Obtain a list of the available cameras on the device.
+  cameras = await availableCameras();
+
+  // Get a specific camera from the list of available cameras.
   runApp(MyApp());
 }
 
@@ -67,13 +78,12 @@ class _HomeState extends State<Home> {
         future: getUser(),
         builder: (ctx, snapshot){
           if (snapshot.connectionState == ConnectionState.done) {
-            return Scaffold(
-              appBar: AppBar(
-                leading: const Icon(FontAwesomeIcons.mobileScreen),
-                title: const Text("РобоПоле"),
-                backgroundColor: Colors.deepOrangeAccent.withOpacity(0.8),
+            return const Scaffold(
+              backgroundColor: Colors.white,
+              body: Align(
+                alignment: Alignment.center,
+                child: Icon(FontAwesomeIcons.solidSun, size: 100, color: Colors.deepOrangeAccent,),
               ),
-              body: const Auth(),
             );
           }
           else{

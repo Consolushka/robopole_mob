@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
@@ -7,7 +8,11 @@ import 'dart:convert';
 import 'package:robopole_mob/classes.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/utils.dart';
-import 'package:workmanager/workmanager.dart';
+import 'package:robopole_mob/pages/camera_preview.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+
+String? selValue = null;
+String comment = "";
 
 class Inventory extends StatefulWidget {
   const Inventory({Key? key}) : super(key: key);
@@ -17,8 +22,8 @@ class Inventory extends StatefulWidget {
 }
 
 class _InventoryState extends State<Inventory> {
-  late bool _serviceEnabled;
-  late PermissionStatus _permissionGranted;
+  late bool _locationServiceEnabled;
+  late PermissionStatus _locationPermissionGranted;
 
   List<AgroCulture> availableCultures = [];
 
@@ -55,23 +60,25 @@ class _InventoryState extends State<Inventory> {
       var element = availableCultures[i];
       if (element.ParentID == 0) {
         dropitems.add(DropdownMenuItem(
-          child: Text(element.Name!), value: "${element.ID}",));
+          child: Text(element.Name!),
+          value: "${element.ID}",
+        ));
       }
     }
     // Check if location service is enable
-    _serviceEnabled = await location.serviceEnabled();
-    if (!_serviceEnabled) {
-      _serviceEnabled = await location.requestService();
-      if (!_serviceEnabled) {
+    _locationServiceEnabled = await location.serviceEnabled();
+    if (!_locationServiceEnabled) {
+      _locationServiceEnabled = await location.requestService();
+      if (!_locationServiceEnabled) {
         return const LatLng(54.86, 38.2);
       }
     }
 
     // Check if permission is granted
-    _permissionGranted = await location.hasPermission();
-    if (_permissionGranted == PermissionStatus.denied) {
-      _permissionGranted = await location.requestPermission();
-      if (_permissionGranted != PermissionStatus.granted) {
+    _locationPermissionGranted = await location.hasPermission();
+    if (_locationPermissionGranted == PermissionStatus.denied) {
+      _locationPermissionGranted = await location.requestPermission();
+      if (_locationPermissionGranted != PermissionStatus.granted) {
         return const LatLng(54.86, 38.2);
       }
     }
@@ -81,16 +88,30 @@ class _InventoryState extends State<Inventory> {
     return LatLng(_locationData.latitude!, _locationData.longitude!);
   }
 
+  Widget findImage() {
+    List<Container> images = [];
+    for (int i = 0; i < imagePaths.length; i++) {
+      images.add(Container(
+        height: 75,
+        width: 75,
+        child: Image.file(File(imagePaths[i])),
+      ));
+    }
+    return Row(
+      children: images,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    Future<LatLng> getLocation = getUserLocation();
     return FutureBuilder(
-      future: getLocation,
+      future: getUserLocation(),
       builder: (ctx, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           return Stack(
             children: [
               Scaffold(
+                resizeToAvoidBottomInset: false,
                 appBar: AppBar(
                   title: const Text("Инвентаризация"),
                   backgroundColor: Colors.deepOrangeAccent,
@@ -102,7 +123,7 @@ class _InventoryState extends State<Inventory> {
                       child: GoogleMap(
                           mapType: MapType.hybrid,
                           initialCameraPosition:
-                          CameraPosition(target: _userLocation, zoom: 18),
+                              CameraPosition(target: _userLocation, zoom: 18),
                           myLocationEnabled: true,
                           myLocationButtonEnabled: true,
                           zoomControlsEnabled: true),
@@ -110,37 +131,68 @@ class _InventoryState extends State<Inventory> {
                     Container(
                       padding: EdgeInsets.only(left: 20, right: 20),
                       child: Column(
-                        children: [const SizedBox(height: 20,),
+                        children: [
+                          const SizedBox(
+                            height: 20,
+                          ),
                           const Align(
                             alignment: Alignment.centerLeft,
                             child: Text("Выбирете культуру"),
                           ),
-                          const SizedBox(height: 10,),
+                          const SizedBox(
+                            height: 10,
+                          ),
                           Align(
-                              alignment: Alignment.centerLeft,
-                              child: DropdownButton<String>(
-                                isExpanded: true,
-                                value: selectedValue,
-                                items: dropitems,
-                                onChanged: (String? value) {
-                                  setState(() {
-                                    selectedValue = value;
-                                  });
-                                },
-                              ),),
-                          const SizedBox(height: 20,),
+                            alignment: Alignment.centerLeft,
+                            child: DropdownButton<String>(
+                              isExpanded: true,
+                              value: selValue,
+                              items: dropitems,
+                              onChanged: (String? value) {
+                                selValue = value;
+                                setState(() {});
+                              },
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 20,
+                          ),
                           const Align(
                             alignment: Alignment.centerLeft,
                             child: Text("Добавте комментарий"),
                           ),
-                          TextField(
-                            keyboardType: TextInputType.multiline,
+                          TextFormField(
                             maxLines: null,
-                            onChanged: (text){
-
-                              debugPrint(text);
+                            initialValue: comment,
+                            style: const TextStyle(fontSize: 20),
+                            decoration: const InputDecoration(
+                              hintText: "Комментарий",
+                            ),
+                            onChanged: (text) {
+                              comment = text;
                             },
-                          ),],
+                          ),
+                          const SizedBox(
+                            height: 20,
+                          ),
+                          findImage(),
+                          const SizedBox(
+                            height: 15,
+                          ),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                          const CameraView()),
+                                          (route) => false);
+                                },
+                                child: const Icon(Icons.add)),
+                          )
+                        ],
                       ),
                     )
                   ],
@@ -148,29 +200,49 @@ class _InventoryState extends State<Inventory> {
               ),
               Align(
                 alignment: Alignment.bottomRight,
-                child: FloatingActionButton(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 15, right: 15),
+                  child: FloatingActionButton(
+                  heroTag: "confirm",
                   onPressed: () {
                     debugPrint("confirm");
                   },
-                  child: const Icon(Icons.check),
                   backgroundColor: Colors.green,
-                ),
+                  child: const Icon(Icons.check),
+                ),),
               ),
               Align(
-                alignment: Alignment.bottomCenter,
-                child: FloatingActionButton(
-                  onPressed: () {
-                    debugPrint("not sure");
-                    Workmanager().cancelAll();
-                  },
-                  child: const Icon(Icons.question_mark),
-                  backgroundColor: Colors.grey,
-                ),
-              )
+                alignment: Alignment.bottomLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 15, left: 15),
+                  child: FloatingActionButton(
+                    heroTag: "clearData",
+                    onPressed: () {
+                      selValue = null;
+                      imagePaths = [];
+                      comment = "";
+                      setState((){});
+                    },
+                    backgroundColor: Colors.redAccent,
+                    child: const Icon(Icons.delete),
+                  ),
+        ),
+              ),
             ],
           );
         } else {
-          return const Text("......");
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: const [SpinKitRing(
+                color: Colors.deepOrangeAccent,
+                size: 100,
+              )],
+
+            ),
+          );
         }
       },
     );

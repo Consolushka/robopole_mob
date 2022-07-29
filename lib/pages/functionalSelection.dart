@@ -20,33 +20,51 @@ class _FunctionalPageState extends State<FunctionalPage> {
           ),
           body: Align(
             alignment: Alignment.center,
-            child: Column(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
                     onPressed: (){
                       Navigator.of(context).push(_createRoute(2));
                     },
                     style: ElevatedButton.styleFrom(
-                        primary: Colors.green,
-                        padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
+                        primary: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15))),
-                    child: const Text(
-                      "Инвентаризация",
-                      style: TextStyle(fontSize: 20),
+                    child: Container(
+                      height: 75,
+                      padding: EdgeInsets.zero,
+                      child: Column(
+                        children: const [
+                          Icon(Icons.add_business, size: 50,color: Colors.black54,),
+                          Text(
+                            "Инвентаризация",
+                            style: TextStyle(fontSize: 10,color: Colors.black54),
+                          )
+                        ],
+                      )
                     )),
                 ElevatedButton(
                     onPressed: (){
                       Navigator.of(context).push(_createRoute(1));
                     },
                     style: ElevatedButton.styleFrom(
-                        primary: Colors.deepOrangeAccent,
-                        padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
+                        primary: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15))),
-                    child: const Text(
-                      "Информация",
-                      style: TextStyle(fontSize: 20),
+                    child: Container(
+                        height: 75,
+                        width: 75,
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          children: const [
+                            Icon(Icons.info_outline, size: 50,color: Colors.black54,),
+                            Text(
+                              "Информация",
+                              style: TextStyle(fontSize: 10,color: Colors.black54),
+                            )
+                          ],
+                        )
                     ))
               ],
             ),
