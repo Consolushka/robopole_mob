@@ -12,9 +12,28 @@ import 'package:robopole_mob/utils.dart';
 import 'package:robopole_mob/pages/camera_preview.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:robopole_mob/pages/auth.dart';
+import 'package:workmanager/workmanager.dart';
 
 String? selValue = null;
 String comment = "";
+
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    var resp = await http.post(
+        Uri.parse("${Utils.uriAPI}field/confirm-field-culture"),
+        headers: {
+          "Authorization": inputData!['token'] as String,
+          "Content-Type": "application/json"
+        },
+        body: jsonEncode(
+            {'fieldId': inputData['fieldId'], 'fieldCultureId': inputData['cultureId']})
+    );
+    debugPrint(resp.body);
+    debugPrint("Confirmed");
+    Workmanager().cancelAll();
+    return Future.value(true);
+  });
+}
 
 class Inventory extends StatefulWidget {
   const Inventory({Key? key}) : super(key: key);
@@ -37,6 +56,10 @@ class _InventoryState extends State<Inventory> {
   LatLng _userLocation = const LatLng(53.31, 38.1);
 
   Future<LatLng> getUserLocation() async {
+    Workmanager().initialize(
+        callbackDispatcher, // The top level function, aka callbackDispatcher
+        isInDebugMode: true // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
+    );
     Location location = Location();
     var culturesStored = await storage.read(key: "Cultures");
     String culturesJson = "";
@@ -255,8 +278,13 @@ class _InventoryState extends State<Inventory> {
                   padding: const EdgeInsets.only(bottom: 15, right: 15),
                   child: FloatingActionButton(
                   heroTag: "confirm",
-                  onPressed: () {
-                    debugPrint("confirm");
+                  onPressed: () async {
+                    var request = http.MultipartRequest('POST', Uri.parse("${Utils.uriAPI}locationCulture/save-photo"));
+                    request.headers.addAll({"Authorization": user!.Token as String});
+                    request.files.add(await http.MultipartFile.fromPath('picture', imagePaths[0]));
+
+                    var res = await request.send();
+                    var response = res.reasonPhrase;
                   },
                   backgroundColor: Colors.green,
                   child: const Icon(Icons.check),
