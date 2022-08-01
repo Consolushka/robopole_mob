@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:robopole_mob/classes.dart';
 import 'dart:convert';
 import 'package:robopole_mob/main.dart';
+import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:robopole_mob/utils.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -29,6 +30,10 @@ class MapSampleState extends State<MapSample> {
   List fields = [];
   List partners = [];
   List<ListTile> partnersListTiles = [];
+  double highest = 0.0;
+  double rightest = 0.0;
+  double lowest = 0.0;
+  double leftest = 0.0;
 
   void showError(Error error){
     showDialog(
@@ -55,21 +60,28 @@ class MapSampleState extends State<MapSample> {
     else{
       await storage.write(key: "selectedPartnerId", value: partnerId.toString());
     }
+    partnersListTiles = [];
     setState((){});
   }
 
-  @override
-  void initState(){
+  Future loadPartners() async{
+    var selectedPartnerId =await storage.read(key: "selectedPartnerId");
+
+    partnersListTiles.add(ListTile(
+      leading: const Icon(Icons.alt_route),
+      title: const Text('Выбор функционала'),
+      onTap: (){
+        Navigator.pushAndRemoveUntil(context,
+            MaterialPageRoute(builder: (context) => const FunctionalPage()), (route) => false);
+      },
+    ));
     partnersListTiles.add(ListTile(
       title: const Text("Показать все"),
+      tileColor: selectedPartnerId==null? Colors.deepOrangeAccent.withOpacity(0.5): null,
       onTap: (){
         filterPolygonsByPartner(0);
       },
     ));
-    super.initState();
-  }
-
-  Future loadPartners() async{
     var partnersStorage = await storage.read(key: "Partners");
     String partnersJson = "";
     user = User.fromJson(await storage.read(key: "User") as String);
@@ -96,14 +108,15 @@ class MapSampleState extends State<MapSample> {
 
     var decodedPartners = jsonDecode(partnersJson) as List;
 
-    decodedPartners.forEach((partner) {
+    for (var partner in decodedPartners) {
       partnersListTiles.add(ListTile(
         title: Text(partner['name']),
+        tileColor: partner['id'].toString()==selectedPartnerId? Colors.deepOrangeAccent.withOpacity(0.5):null,
         onTap: (){
           filterPolygonsByPartner(partner['id']);
         },
       ));
-    });
+    }
   }
 
   Future loadFields() async{
@@ -138,14 +151,13 @@ class MapSampleState extends State<MapSample> {
   }
 
   Future<Set<Polygon>> createPolygons() async{
-    if(partnersListTiles.length <= 1){
+    if(partnersListTiles.length <= 2){
       await loadPartners();
     }
 
     if(_polygons.isEmpty){
       await loadFields();
     }
-
 
     var selectedPartnerId =await storage.read(key: "selectedPartnerId");
     _polygons = {};
@@ -165,12 +177,40 @@ class MapSampleState extends State<MapSample> {
         List<LatLng> polygonCoords = [];
         cooooords.forEach((element) {
           var c = element;
+          double? lat;
+          double? lng;
           if(element[0] is double){
+            lat = c[1];
+            lng = c[0];
             polygonCoords.add(LatLng(c[1], c[0]));
           }
           else{
             c=element[0];
+            lat = c[1];
+            lng = c[0];
             polygonCoords.add(LatLng(c[1], c[0]));
+          }
+          if(_polygons.length==0 && polygonCoords.length==1){
+            highest = lat!;
+            lowest = lat;
+            rightest = lng!;
+            leftest = lng;
+          }
+          if(lat!>highest){
+            highest = lat;
+          }
+          else{
+            if(lat<lowest){
+              lowest = lat;
+            }
+          }
+          if(lng!>rightest){
+            rightest = lng;
+          }
+          else{
+            if(lng<leftest){
+              leftest = lng;
+            }
           }
         });
         var poly = Polygon(
@@ -246,7 +286,7 @@ class MapSampleState extends State<MapSample> {
                           fields = [];
                           await storage.delete(key: "Fields");
                           Navigator.pushAndRemoveUntil(context,
-                              MaterialPageRoute(builder: (context) => const Home()), (route) => false);
+                              MaterialPageRoute(builder: (context) => const NoAuthed()), (route) => false);
                         },
                       ),
                       ListTile(
@@ -272,6 +312,12 @@ class MapSampleState extends State<MapSample> {
                   myLocationEnabled: true,
                   myLocationButtonEnabled: true,
                   zoomControlsEnabled: true,
+                  cameraTargetBounds: CameraTargetBounds(
+                    LatLngBounds(
+                      northeast: LatLng(highest, rightest),
+                      southwest: LatLng(lowest, leftest)
+                    )
+                  ),
                   initialCameraPosition: const CameraPosition(
                     target: LatLng(54.8561, 38.2930),
                     zoom: 10.0,

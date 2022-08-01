@@ -83,83 +83,90 @@ class _AuthState extends State<Auth> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-        child: Container(
-          padding: const EdgeInsets.all(25),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Container(
-                  margin: const EdgeInsets.only(bottom: 30),
-                  child: const Text(
-                    "Войдите в РобоПоле",
-                    style: TextStyle(color: Colors.black54, fontSize: 24),
-                  )),
-              Container(
-                margin: const EdgeInsets.only(bottom: 15),
-                child: TextField(
-                  onChanged: (value) {
-                    login = value;
-                  },
-                  style: const TextStyle(fontSize: 20),
-                  decoration: InputDecoration(
-                    hintText: 'Логин',
-                    contentPadding: const EdgeInsets.all(10),
-                    enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(50),
-                        borderSide:
-                        const BorderSide(color: Colors.black54, width: 2)),
-                    focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(50),
-                        borderSide: BorderSide(
-                            color: Colors.deepOrangeAccent.withOpacity(0.5),
-                            width: 2)),
-                  ),
-                ),
-              ),
-              Column(
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 15),
-                    child: TextField(
-                      onChanged: (value) {
-                        password = value;
-                      },
-                      obscureText: true,
-                      enableSuggestions: false,
-                      autocorrect: false,
-                      style: const TextStyle(fontSize: 20),
-                      decoration: InputDecoration(
-                        hintText: 'Пароль',
-                        contentPadding: const EdgeInsets.all(10),
-                        enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(50),
-                            borderSide:
-                            const BorderSide(color: Colors.black54, width: 2)),
-                        focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(50),
-                            borderSide: BorderSide(
-                                color: Colors.deepOrangeAccent.withOpacity(0.5),
-                                width: 2)),
-                      ),
+
+    return Scaffold(
+          appBar: AppBar(
+            title: Text("Робополе 2022"),
+            leading: Icon(Icons.android),
+            backgroundColor: Colors.deepOrangeAccent,
+          ),
+          body: Container(
+            padding: const EdgeInsets.all(25),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Container(
+                    margin: const EdgeInsets.only(bottom: 30),
+                    child: const Text(
+                      "Войдите в РобоПоле",
+                      style: TextStyle(color: Colors.black54, fontSize: 24),
+                    )),
+                Container(
+                  margin: const EdgeInsets.only(bottom: 15),
+                  child: TextField(
+                    onChanged: (value) {
+                      login = value;
+                    },
+                    style: const TextStyle(fontSize: 20),
+                    decoration: InputDecoration(
+                      hintText: 'Логин',
+                      contentPadding: const EdgeInsets.all(10),
+                      enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(50),
+                          borderSide:
+                          const BorderSide(color: Colors.black54, width: 2)),
+                      focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(50),
+                          borderSide: BorderSide(
+                              color: Colors.deepOrangeAccent.withOpacity(0.5),
+                              width: 2)),
                     ),
                   ),
-                ],
-              ),
-              ElevatedButton(
-                  onPressed: auth,
-                  style: ElevatedButton.styleFrom(
-                      primary: Colors.deepOrangeAccent,
-                      padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30))),
-                  child: const Text(
-                    "Войти",
-                    style: TextStyle(fontSize: 20),
-                  )),
-            ],
+                ),
+                Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 15),
+                      child: TextField(
+                        onChanged: (value) {
+                          password = value;
+                        },
+                        obscureText: true,
+                        enableSuggestions: false,
+                        autocorrect: false,
+                        style: const TextStyle(fontSize: 20),
+                        decoration: InputDecoration(
+                          hintText: 'Пароль',
+                          contentPadding: const EdgeInsets.all(10),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(50),
+                              borderSide:
+                              const BorderSide(color: Colors.black54, width: 2)),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(50),
+                              borderSide: BorderSide(
+                                  color: Colors.deepOrangeAccent.withOpacity(0.5),
+                                  width: 2)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                ElevatedButton(
+                    onPressed: auth,
+                    style: ElevatedButton.styleFrom(
+                        primary: Colors.deepOrangeAccent,
+                        padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30))),
+                    child: const Text(
+                      "Войти",
+                      style: TextStyle(fontSize: 20),
+                    )),
+              ],
+            ),
           ),
-        ));
+        );
   }
 }

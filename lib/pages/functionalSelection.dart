@@ -12,8 +12,8 @@ class FunctionalPage extends StatefulWidget {
 class _FunctionalPageState extends State<FunctionalPage> {
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-        child: Scaffold(
+
+    return Scaffold(
           appBar: AppBar(
             title: const Text("Робополе 2022"),
             backgroundColor: Colors.deepOrangeAccent,
@@ -69,8 +69,7 @@ class _FunctionalPageState extends State<FunctionalPage> {
               ],
             ),
           ),
-        )
-    );
+        );
   }
 }
 

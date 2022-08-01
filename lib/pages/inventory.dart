@@ -7,9 +7,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:robopole_mob/classes.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:robopole_mob/utils.dart';
 import 'package:robopole_mob/pages/camera_preview.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:robopole_mob/pages/auth.dart';
 
 String? selValue = null;
 String comment = "";
@@ -24,6 +26,7 @@ class Inventory extends StatefulWidget {
 class _InventoryState extends State<Inventory> {
   late bool _locationServiceEnabled;
   late PermissionStatus _locationPermissionGranted;
+  User? user;
 
   List<AgroCulture> availableCultures = [];
 
@@ -37,11 +40,11 @@ class _InventoryState extends State<Inventory> {
     Location location = Location();
     var culturesStored = await storage.read(key: "Cultures");
     String culturesJson = "";
+    user = User.fromJson(await storage.read(key: "User") as String);
     if (culturesStored == null) {
-      var user = User.fromJson(await storage.read(key: "User") as String);
       var response = await http.get(
           Uri.parse('${Utils.uriAPI}locationCulture/get-all-cultures'),
-          headers: {"Authorization": user.Token as String});
+          headers: {"Authorization": user!.Token as String});
       if (response.statusCode == 200) {
         culturesJson = response.body;
         await storage.write(key: "Cultures", value: response.body);
@@ -115,6 +118,54 @@ class _InventoryState extends State<Inventory> {
                 appBar: AppBar(
                   title: const Text("Инвентаризация"),
                   backgroundColor: Colors.deepOrangeAccent,
+                ),
+                drawer: Drawer(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: <Widget>[
+                      DrawerHeader(
+                          decoration: const BoxDecoration(
+                            color: Colors.deepOrangeAccent,
+                          ),
+                          child: Container(
+                            alignment: Alignment.bottomLeft,
+                            child: Text(
+                              "${user!.Name}",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                              ),
+                            ),
+                          )
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.alt_route),
+                        title: const Text('Выбор функционала'),
+                        onTap: () {
+                          Navigator.pushAndRemoveUntil(context,
+                              MaterialPageRoute(builder: (context) => const FunctionalPage()), (route) => false);
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.logout),
+                        title: const Text('Выйти'),
+                        onTap: () async {
+                          await storage.delete(key: "User");
+                          await storage.delete(key: "Partners");
+                          await storage.delete(key: "Fields");
+                          await storage.delete(key: "Cultures");
+                          Navigator.pushAndRemoveUntil(context,
+                              MaterialPageRoute(builder: (context) => const Auth()), (route) => false);
+                        },
+                      ),
+                      ListTile(
+                          leading: Icon(Icons.info_outline),
+                          title: Text('Обновить данные'),
+                          onTap: () async {
+                          }
+                      ),
+                    ],
+                  ),
                 ),
                 body: Column(
                   children: [

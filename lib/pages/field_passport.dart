@@ -42,6 +42,11 @@ class _FieldPassportState extends State<FieldPassport> {
   LatLng currentLatLng = new LatLng(33,33);
   Completer<GoogleMapController> _controller = Completer();
 
+  double highest = 0.0;
+  double rightest = 0.0;
+  double lowest = 0.0;
+  double leftest = 0.0;
+
   Future<Map<int, List<LatLng>>> fetchPost() async {
     var fieldsStorage = await storage.read(key: "Fields");
     var fields = jsonDecode(fieldsStorage as String) as List;
@@ -55,12 +60,40 @@ class _FieldPassportState extends State<FieldPassport> {
       List<LatLng> polygonCoords = [];
       cooooords.forEach((element) {
         var c = element;
+        double? lat;
+        double? lng;
         if(element[0] is double){
+          lat = c[1];
+          lng = c[0];
           polygonCoords.add(LatLng(c[1], c[0]));
         }
         else{
           c=element[0];
+          lat = c[1];
+          lng = c[0];
           polygonCoords.add(LatLng(c[1], c[0]));
+        }
+        if(polygonCoords.length==1){
+          highest = lat!;
+          lowest = lat;
+          rightest = lng!;
+          leftest = lng;
+        }
+        if(lat!>highest){
+          highest = lat;
+        }
+        else{
+          if(lat<lowest){
+            lowest = lat;
+          }
+        }
+        if(lng!>rightest){
+          rightest = lng;
+        }
+        else{
+          if(lng<leftest){
+            leftest = lng;
+          }
         }
       });
       ass[widget.id] = polygonCoords;
@@ -87,7 +120,13 @@ class _FieldPassportState extends State<FieldPassport> {
                 consumeTapEvents: true)
           },
           mapType: MapType.hybrid,
-          initialCameraPosition: CameraPosition(target: currentLatLng, zoom: 14),
+          cameraTargetBounds: CameraTargetBounds(
+              LatLngBounds(
+                  northeast: LatLng(highest, rightest),
+                  southwest: LatLng(lowest, leftest)
+              )
+          ),
+          initialCameraPosition: CameraPosition(target: LatLng(54.3, 38.4), zoom: 13),
           myLocationEnabled: true,
           myLocationButtonEnabled: true,
           onMapCreated: (GoogleMapController controller){
@@ -191,25 +230,33 @@ class _FieldPassportState extends State<FieldPassport> {
       future: poly,
       builder: (ctx, snapshot){
         if(snapshot.connectionState == ConnectionState.done){
-          return Scaffold(
-            appBar: AppBar(
-              title: Text("Поле ${widget.id}"),
-              backgroundColor: Colors.deepOrangeAccent,
-            ),
-            body: SingleChildScrollView(
-              child: Column(
-                children: [
-                  FieldMap(),
-                  Container(
-                    margin: EdgeInsets.only(left: 10, right: 10),
-                    child: Column(
-                        children: FieldInfo()
-                    ),
+          return
+              Scaffold(
+                  appBar: AppBar(
+                    title: Text("Поле ${widget.id}"),
+                    backgroundColor: Colors.deepOrangeAccent,
+                  ),
+                  body: Stack(
+                    children: [
+                      Positioned(
+                        child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            SizedBox(height: 200,),
+                            Container(
+                              margin: EdgeInsets.only(left: 10, right: 10),
+                              child: Column(
+                                  children: FieldInfo()
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                      ),
+                      FieldMap()
+                    ],
                   )
-                ],
-              ),
-            )
-          );
+              );
         }
         else{
           return const Text("......");

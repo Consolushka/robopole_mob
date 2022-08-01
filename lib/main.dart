@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:robopole_mob/classes.dart';
 import 'package:http/http.dart' as http;
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:robopole_mob/utils.dart';
 import 'package:camera/camera.dart';
+import 'package:robopole_mob/pages/auth.dart';
 
 List<CameraDescription> cameras = [];
 
@@ -18,84 +18,58 @@ Future<void> main() async {
   // Obtain a list of the available cameras on the device.
   cameras = await availableCameras();
 
+  final storage = FlutterSecureStorage();
+
+  final userJson = await storage.read(key: "User");
+  debugPrint(userJson);
+  if(userJson != null){
+    var user = User.fromJson(userJson);
+    final culturesStored = await storage.read(key: "Cultures");
+    if(culturesStored == null){
+      var response = await http.get(
+          Uri.parse('${Utils.uriAPI}locationCulture/get-all-cultures'),
+          headers: {
+            "Authorization": user.Token as String
+          }
+      );
+      if(response.statusCode == 200){
+        await storage.write(key: "Cultures", value: response.body);
+      }
+    }
+    if(user.ID != 0){
+      debugPrint("correct user");
+      runApp(Authed());
+    }
+  }
+  else{
+    print("null");
+    runApp(NoAuthed());
+  }
   // Get a specific camera from the list of available cameras.
-  runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class Authed extends StatelessWidget {
+  const Authed({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'GoogleMaps',
       theme: ThemeData(fontFamily: 'Roboto'),
-      home: const Home(),
+      home: const FunctionalPage(),
     );
   }
 }
 
-class Home extends StatefulWidget {
-  const Home({Key? key}) : super(key: key);
-
-  @override
-  State<Home> createState() => _HomeState();
-}
-
-class _HomeState extends State<Home> {
-  final storage = FlutterSecureStorage();
-
-  Future getUser() async {
-    final userJson = await storage.read(key: "User");
-    debugPrint(userJson);
-    if(userJson != null){
-      var user = User.fromJson(userJson);
-      final culturesStored = await storage.read(key: "Cultures");
-      if(culturesStored == null){
-        var response = await http.get(
-             Uri.parse('${Utils.uriAPI}locationCulture/get-all-cultures'),
-           headers: {
-              "Authorization": user.Token as String
-          }
-        );
-        if(response.statusCode == 200){
-          await storage.write(key: "Cultures", value: response.body);
-        }
-      }
-      if(user.ID != 0){
-        debugPrint("correct user");
-        Navigator.pushAndRemoveUntil(context,
-            MaterialPageRoute(builder: (context) => const FunctionalPage()), (
-                route) => false);
-      }
-    }
-    else{
-      debugPrint("null");
-    }
-  }
+class NoAuthed extends StatelessWidget {
+  const NoAuthed({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-        future: getUser(),
-        builder: (ctx, snapshot){
-          if (snapshot.connectionState == ConnectionState.done) {
-            return const Scaffold(
-              backgroundColor: Colors.white,
-              body: Align(
-                alignment: Alignment.center,
-                child: Icon(FontAwesomeIcons.solidSun, size: 100, color: Colors.deepOrangeAccent,),
-              ),
-            );
-          }
-          else{
-            return const Scaffold(
-              backgroundColor: Colors.white,
-              body: Align(
-                alignment: Alignment.center,
-                child: Icon(FontAwesomeIcons.solidSun, size: 100, color: Colors.deepOrangeAccent,),
-              ),
-            );
-          }
-        }
+    return MaterialApp(
+      title: 'GoogleMaps',
+      theme: ThemeData(fontFamily: 'Roboto'),
+      home: const Auth(),
     );
   }
-  }
+}
