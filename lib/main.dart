@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:robopole_mob/classes.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
-import 'package:robopole_mob/utils.dart';
 import 'package:camera/camera.dart';
 import 'package:robopole_mob/pages/auth.dart';
 
@@ -24,18 +22,6 @@ Future<void> main() async {
   debugPrint(userJson);
   if(userJson != null){
     var user = User.fromJson(userJson);
-    final culturesStored = await storage.read(key: "Cultures");
-    if(culturesStored == null){
-      var response = await http.get(
-          Uri.parse('${Utils.uriAPI}locationCulture/get-all-cultures'),
-          headers: {
-            "Authorization": user.Token as String
-          }
-      );
-      if(response.statusCode == 200){
-        await storage.write(key: "Cultures", value: response.body);
-      }
-    }
     if(user.ID != 0){
       debugPrint("correct user");
       runApp(Authed());

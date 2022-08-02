@@ -23,7 +23,7 @@ class _AuthState extends State<Auth> {
   void auth() async{
     var response = await http.post(
         Uri.parse(
-            '${Utils.uriAPI}user/authenticate'),
+            '${APIUri.User.Authenticate}'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(
             {'login': login, 'password': password}));
@@ -35,7 +35,7 @@ class _AuthState extends State<Auth> {
         await storage.write(key: "User", value: user.toJson());
 
         var response = await http.get(
-            Uri.parse('${Utils.uriAPI}locationCulture/get-all-cultures'),
+            Uri.parse('${APIUri.Inventory.AllCultures}'),
             headers: {
               "Authorization": user.Token as String
             }

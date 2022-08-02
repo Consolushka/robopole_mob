@@ -88,7 +88,7 @@ class MapSampleState extends State<MapSample> {
 
     if(partnersStorage == null){
       var part = await http.get(
-          Uri.parse("${Utils.uriAPI}partner/get-available-partners"),
+          Uri.parse(APIUri.Partner.AvailablePartners),
           headers: {
             HttpHeaders.authorizationHeader: user.Token as String,
           });
@@ -128,7 +128,7 @@ class MapSampleState extends State<MapSample> {
     if(fieldsStorage == null){
       debugPrint("empty storage");
       var availableFields = await http.get(
-          Uri.parse("${Utils.uriAPI}field/get-available-fieldsCoords-byUser"),
+          Uri.parse(APIUri.Field.AvailableFields),
           headers: {
             HttpHeaders.authorizationHeader: user.Token as String,
           }

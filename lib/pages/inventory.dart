@@ -18,21 +18,21 @@ String? selValue = null;
 String comment = "";
 
 void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
-    var resp = await http.post(
-        Uri.parse("${Utils.uriAPI}field/confirm-field-culture"),
-        headers: {
-          "Authorization": inputData!['token'] as String,
-          "Content-Type": "application/json"
-        },
-        body: jsonEncode(
-            {'fieldId': inputData['fieldId'], 'fieldCultureId': inputData['cultureId']})
-    );
-    debugPrint(resp.body);
-    debugPrint("Confirmed");
-    Workmanager().cancelAll();
-    return Future.value(true);
-  });
+  // Workmanager().executeTask((task, inputData) async {
+  //   var resp = await http.post(
+  //       Uri.parse("${Utils.uriAPI}field/confirm-field-culture"),
+  //       headers: {
+  //         "Authorization": inputData!['token'] as String,
+  //         "Content-Type": "application/json"
+  //       },
+  //       body: jsonEncode(
+  //           {'fieldId': inputData['fieldId'], 'fieldCultureId': inputData['cultureId']})
+  //   );
+  //   debugPrint(resp.body);
+  //   debugPrint("Confirmed");
+  //   Workmanager().cancelAll();
+  //   return Future.value(true);
+  // });
 }
 
 class Inventory extends StatefulWidget {
@@ -66,7 +66,7 @@ class _InventoryState extends State<Inventory> {
     user = User.fromJson(await storage.read(key: "User") as String);
     if (culturesStored == null) {
       var response = await http.get(
-          Uri.parse('${Utils.uriAPI}locationCulture/get-all-cultures'),
+          Uri.parse(APIUri.Inventory.AllCultures),
           headers: {"Authorization": user!.Token as String});
       if (response.statusCode == 200) {
         culturesJson = response.body;
@@ -127,6 +127,99 @@ class _InventoryState extends State<Inventory> {
       children: images,
     );
   }
+
+  void showLoader(){
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: const [SpinKitRing(
+            color: Colors.deepOrangeAccent,
+            size: 100,
+          )],
+        );
+      },
+    );
+  }
+
+  void showErrorDialog(errorMessage) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) =>
+            AlertDialog(
+              title: const Text("Ошибка"),
+              content: Text(errorMessage),
+              actions: [
+                ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                        primary: Colors.red
+                    ),
+                    child: const Text("Ok"))
+              ],
+            )
+    );
+  }
+
+  void showOKDialog() {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) =>
+            AlertDialog(
+              title: const Text("Инвентаризация проведена"),
+              actions: [
+                ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                        primary: Colors.green
+                    ),
+                    child: const Text("Ok"))
+              ],
+            )
+    );
+  }
+
+  Future<void> PostInventory () async{
+    showLoader();
+    Location location = Location();
+    final _locationData = await location.getLocation();
+    LocationInventory inv = LocationInventory(0, _locationData.latitude!, _locationData.longitude!, int.parse(selValue!), comment, [""]);
+    if(imagePaths.isNotEmpty){
+      var request = http.MultipartRequest('POST', Uri.parse(APIUri.Inventory.SavePhotos));
+      request.headers.addAll({"Authorization": user!.Token as String});
+      for(var image in imagePaths){
+        request.files.add(await http.MultipartFile.fromPath('picture', image));
+      }
+
+      var res = await request.send();
+      var responsed = await http.Response.fromStream(res);
+      final body = (json.decode(responsed.body) as List<dynamic>).cast<String>();
+      inv.PhotosNames = body;
+    }
+    var jsoned = json.encode(inv);
+
+    var response = await http.post(
+        Uri.parse(APIUri.Inventory.AddInventory),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": user!.Token as String
+        },
+        body: jsoned);
+
+    Navigator.pop(context);
+
+    if(response.statusCode == 200){
+      showOKDialog();
+    }
+    else{
+      var error = Error.fromResponse(response);
+      var errorMessage = "${error.Message} при обращаении к ${error.Path}";
+      showErrorDialog(errorMessage);
+    }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -279,12 +372,26 @@ class _InventoryState extends State<Inventory> {
                   child: FloatingActionButton(
                   heroTag: "confirm",
                   onPressed: () async {
-                    var request = http.MultipartRequest('POST', Uri.parse("${Utils.uriAPI}locationCulture/save-photo"));
-                    request.headers.addAll({"Authorization": user!.Token as String});
-                    request.files.add(await http.MultipartFile.fromPath('picture', imagePaths[0]));
-
-                    var res = await request.send();
-                    var response = res.reasonPhrase;
+                    if(selValue==null){
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context)=>AlertDialog(
+                            title: const Text("Ошибка"),
+                            content: Text("Выберете культуру"),
+                            actions: [
+                              ElevatedButton(
+                                  onPressed: ()=>Navigator.pop(context),
+                                  style: ElevatedButton.styleFrom(
+                                      primary: Colors.red
+                                  ),
+                                  child: const Text("Ok"))
+                            ],
+                          )
+                      );
+                    }
+                    else{
+                      await PostInventory();
+                    }
                   },
                   backgroundColor: Colors.green,
                   child: const Icon(Icons.check),

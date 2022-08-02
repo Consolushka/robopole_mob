@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-class User{
+class User {
   int? ID;
   String? Name;
   String? Token;
@@ -19,7 +19,7 @@ class User{
     Token = parsed['token'];
   }
 
-  Map toMap(){
+  Map toMap() {
     var res = Map();
     res["id"] = ID;
     res["name"] = Name;
@@ -28,14 +28,15 @@ class User{
     res["mobileAccess"] = MobileAccess;
     return res;
   }
-  String toJson()=>jsonEncode(toMap());
+
+  String toJson() => jsonEncode(toMap());
 }
 
-class Partner{
+class Partner {
   int? ID;
   String? Name;
 
-  Partner(this.ID, this.Name){}
+  Partner(this.ID, this.Name) {}
 
   Partner.fromMap(Map map){
     ID = map['id'];
@@ -44,7 +45,7 @@ class Partner{
 
 }
 
-class Error{
+class Error {
   int? StatusCode;
   String? Message;
   String? Path;
@@ -58,7 +59,7 @@ class Error{
   }
 }
 
-class AgroCulture{
+class AgroCulture {
   int? ID;
   String? Name;
   bool? IsActive;
@@ -86,5 +87,28 @@ class AgroCulture{
     ParentID = map["parentID"];
     Level = map["level"];
     Order = map["order"];
+  }
+}
+
+class LocationInventory {
+  int ID;
+  double Lat;
+  double Lng;
+  int AgroCultureID;
+  String Comment;
+  List<String> PhotosNames;
+
+  LocationInventory(this.ID, this.Lat, this.Lng, this.AgroCultureID,
+      this.Comment, this.PhotosNames) {}
+
+  Map toJson() {
+    return {
+      "id": ID,
+      "lat": Lat,
+      "lng": Lng,
+      "agroCultureID": AgroCultureID,
+      "comment": Comment,
+      "photosNames": PhotosNames
+    };
   }
 }

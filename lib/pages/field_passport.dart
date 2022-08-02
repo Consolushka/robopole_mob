@@ -1,30 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:robopole_mob/classes.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:robopole_mob/utils.dart';
-import 'package:workmanager/workmanager.dart';
-
-void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
-      var resp = await http.post(
-        Uri.parse("${Utils.uriAPI}field/confirm-field-culture"),
-          headers: {
-            "Authorization": inputData!['token'] as String,
-            "Content-Type": "application/json"
-          },
-          body: jsonEncode(
-          {'fieldId': inputData['fieldId'], 'fieldCultureId': inputData['cultureId']})
-      );
-      debugPrint(resp.body);
-      debugPrint("Confirmed");
-      Workmanager().cancelAll();
-    return Future.value(true);
-  });
-}
 
 class FieldPassport extends StatefulWidget {
   int id;
@@ -163,10 +141,6 @@ class _FieldPassportState extends State<FieldPassport> {
   }
 
   List<Widget> FieldInfo(){
-    Workmanager().initialize(
-        callbackDispatcher, // The top level function, aka callbackDispatcher
-        isInDebugMode: true // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
-    );
     List<Widget> res = [
       const SizedBox(height: 20)
     ];
@@ -189,36 +163,23 @@ class _FieldPassportState extends State<FieldPassport> {
     createInput("agroCultureName", "Культура").forEach((element) {
       res.add(element);
     });
-    res.add(
-      ElevatedButton(
-
-          onPressed: () async {
-            var user = User.fromJson(await storage.read(key: "User") as String);
-            Workmanager().cancelAll();
-            Workmanager().registerPeriodicTask(
-                "per-task.20.25",
-                "per-task.20.11-18.40",
-                initialDelay: Duration(seconds: 1),
-                inputData: <String, dynamic>{
-                      "fieldId": widget.id,
-                      "cultureId": 232,
-                      "token": user.Token
-                },
-                constraints: Constraints(networkType: NetworkType.connected));
-          },
-          style: ElevatedButton.styleFrom(
-              primary: Colors.green,
-              padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30))),
-          child: const Text(
-            "Подтвердить культуру",
-            style: TextStyle(fontSize: 20),
-          )),
-    );
-    res.add(
-      SizedBox(height: 20)
-    );
+    // res.add(
+    //   ElevatedButton(
+    //       onPressed: () async {
+    //       },
+    //       style: ElevatedButton.styleFrom(
+    //           primary: Colors.green,
+    //           padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
+    //           shape: RoundedRectangleBorder(
+    //               borderRadius: BorderRadius.circular(30))),
+    //       child: const Text(
+    //         "Подтвердить культуру",
+    //         style: TextStyle(fontSize: 20),
+    //       )),
+    // );
+    // res.add(
+    //   SizedBox(height: 20)
+    // );
     return res;
   }
 
