@@ -18,21 +18,46 @@ String? selValue = null;
 String comment = "";
 
 void callbackDispatcher() {
-  // Workmanager().executeTask((task, inputData) async {
-  //   var resp = await http.post(
-  //       Uri.parse("${Utils.uriAPI}field/confirm-field-culture"),
-  //       headers: {
-  //         "Authorization": inputData!['token'] as String,
-  //         "Content-Type": "application/json"
-  //       },
-  //       body: jsonEncode(
-  //           {'fieldId': inputData['fieldId'], 'fieldCultureId': inputData['cultureId']})
-  //   );
-  //   debugPrint(resp.body);
-  //   debugPrint("Confirmed");
-  //   Workmanager().cancelAll();
-  //   return Future.value(true);
-  // });
+  Workmanager().executeTask((task, inputData) async {
+    var userToken = inputData!["UserToken"] as String;
+    var decodedMap = jsonDecode(inputData["Inventory"]);
+
+    var inv = LocationInventory.fromJson(decodedMap);
+    List<String> imagesPaths = inputData["Images"].cast<String>();
+    if(imagesPaths.isNotEmpty){
+      var request = http.MultipartRequest('POST', Uri.parse(APIUri.Inventory.SavePhotos));
+      request.headers.addAll({"Authorization":  userToken});
+      for(var image in imagesPaths){
+        request.files.add(await http.MultipartFile.fromPath('picture', image));
+      }
+
+      var res = await request.send();
+      var responsed = await http.Response.fromStream(res);
+      final body = (json.decode(responsed.body) as List<dynamic>).cast<String>();
+      inv.PhotosNames = body;
+    }
+    var jsoned = json.encode(inv);
+
+    var response = await http.post(
+        Uri.parse(APIUri.Inventory.AddInventory),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": userToken
+        },
+        body: jsoned);
+
+    if(response.statusCode == 200){
+      return Future.value(true);
+    }
+    else{
+      return Future.value(false);
+      // var error = Error.fromResponse(response);
+      // var errorMessage = "${error.Message} при обращаении к ${error.Path}";
+      // showErrorDialog(errorMessage);
+    }
+    Workmanager().cancelAll();
+    return Future.value(true);
+  });
 }
 
 class Inventory extends StatefulWidget {
@@ -373,24 +398,36 @@ class _InventoryState extends State<Inventory> {
                   heroTag: "confirm",
                   onPressed: () async {
                     if(selValue==null){
-                      showDialog(
-                          context: context,
-                          builder: (BuildContext context)=>AlertDialog(
-                            title: const Text("Ошибка"),
-                            content: Text("Выберете культуру"),
-                            actions: [
-                              ElevatedButton(
-                                  onPressed: ()=>Navigator.pop(context),
-                                  style: ElevatedButton.styleFrom(
-                                      primary: Colors.red
-                                  ),
-                                  child: const Text("Ok"))
-                            ],
-                          )
-                      );
+                      showErrorDialog("Выберете культуру");
                     }
                     else{
-                      await PostInventory();
+                      Workmanager().cancelAll();
+                      Location location = Location();
+                      final _locationData = await location.getLocation();
+                      LocationInventory inv = LocationInventory(0, _locationData.latitude!, _locationData.longitude!, int.parse(selValue!), comment, []);
+                      var encoded = jsonEncode(inv);
+                      var decodedMap = jsonDecode(encoded);
+
+                      var i = LocationInventory.fromJson(decodedMap);
+                      try {
+                        await InternetAddress.lookup('example.com');
+                      } on SocketException catch (_) {
+                        showErrorDialog("Отстуствует соеденение с интернетом. Инвентаризация проведется с появлением соединения");
+                      }
+                      Workmanager().initialize(
+                          callbackDispatcher, // The top level function, aka callbackDispatcher
+                          isInDebugMode: true // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
+                      );
+                      Workmanager().registerOneOffTask(
+                          "posting-inventory",
+                          "simpleTask",
+                        constraints: Constraints(networkType: NetworkType.connected),
+                        inputData: {
+                            "Inventory": encoded,
+                            "Images": imagePaths,
+                            "UserToken": user!.Token
+                        }
+                      );
                     }
                   },
                   backgroundColor: Colors.green,

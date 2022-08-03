@@ -91,24 +91,40 @@ class AgroCulture {
 }
 
 class LocationInventory {
-  int ID;
-  double Lat;
-  double Lng;
-  int AgroCultureID;
-  String Comment;
-  List<String> PhotosNames;
+  int? ID;
+  double? Lat;
+  double? Lng;
+  int? AgroCultureID;
+  String? Comment;
+  List<String>? PhotosNames;
+  DateTime? Date;
 
   LocationInventory(this.ID, this.Lat, this.Lng, this.AgroCultureID,
-      this.Comment, this.PhotosNames) {}
+      this.Comment, this.PhotosNames){
+    Date = DateTime.now();
+  }
 
   Map toJson() {
+    var encDate = Date!.toIso8601String();
     return {
       "id": ID,
       "lat": Lat,
       "lng": Lng,
       "agroCultureID": AgroCultureID,
       "comment": Comment,
-      "photosNames": PhotosNames
+      "photosNames": PhotosNames,
+      "date": encDate
     };
+  }
+
+  LocationInventory.fromJson(Map<String, dynamic> json){
+    ID=json["id"];
+    Lat = json["lat"];
+    Lng = json["lng"];
+    AgroCultureID = json["agroCultureID"];
+    Comment = json["comment"];
+    // List<String> lst = List<String>.filled(1, "");
+    PhotosNames = json["photosNames"].cast<String>();
+    Date = DateTime.parse(json["date"]);
   }
 }
