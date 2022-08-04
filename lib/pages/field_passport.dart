@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class FieldPassport extends StatefulWidget {
   int id;
@@ -220,7 +221,18 @@ class _FieldPassportState extends State<FieldPassport> {
               );
         }
         else{
-          return const Text("......");
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: const [SpinKitRing(
+                color: Colors.deepOrangeAccent,
+                size: 100,
+              )],
+
+            ),
+          );
         }
       },
     );

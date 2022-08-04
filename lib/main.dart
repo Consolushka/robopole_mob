@@ -28,7 +28,6 @@ Future<void> main() async {
     }
   }
   else{
-    print("null");
     runApp(NoAuthed());
   }
   // Get a specific camera from the list of available cameras.

@@ -83,7 +83,7 @@ class _InventoryState extends State<Inventory> {
   Future<LatLng> getUserLocation() async {
     Workmanager().initialize(
         callbackDispatcher, // The top level function, aka callbackDispatcher
-        isInDebugMode: true // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
+        isInDebugMode: false // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
     );
     Location location = Location();
     var culturesStored = await storage.read(key: "Cultures");
@@ -406,9 +406,6 @@ class _InventoryState extends State<Inventory> {
                       final _locationData = await location.getLocation();
                       LocationInventory inv = LocationInventory(0, _locationData.latitude!, _locationData.longitude!, int.parse(selValue!), comment, []);
                       var encoded = jsonEncode(inv);
-                      var decodedMap = jsonDecode(encoded);
-
-                      var i = LocationInventory.fromJson(decodedMap);
                       try {
                         await InternetAddress.lookup('example.com');
                       } on SocketException catch (_) {

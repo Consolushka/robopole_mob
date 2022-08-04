@@ -90,7 +90,6 @@ class _CameraViewState extends State<CameraView> {
             );
           } catch (e) {
             // If an error occurs, log the error to the console.
-            print(e);
           }
         },
         child: const Icon(Icons.camera_alt),

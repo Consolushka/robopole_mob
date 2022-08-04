@@ -230,10 +230,6 @@ class MapSampleState extends State<MapSample> {
       }
     }
 
-    print(fields.length);
-    print(_polygons.length);
-    print(partnersListTiles.length);
-
     return _polygons;
   }
 
