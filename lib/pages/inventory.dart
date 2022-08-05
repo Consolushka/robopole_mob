@@ -86,7 +86,6 @@ class _InventoryState extends State<Inventory> {
   LatLng _userLocation = const LatLng(53.31, 38.1);
 
   Future<LatLng> getUserLocation() async {
-    Workmanager().initialize(callbackDispatcher);
     Location location = Location();
     var culturesStored = await storage.read(key: "Cultures");
     String culturesJson = "";
@@ -415,7 +414,7 @@ class _InventoryState extends State<Inventory> {
                       }
                       Workmanager().initialize(
                           callbackDispatcher, // The top level function, aka callbackDispatcher
-                          isInDebugMode: true // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
+                          isInDebugMode: false // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
                       );
                       Workmanager().registerOneOffTask(
                           "posting-inventory",
