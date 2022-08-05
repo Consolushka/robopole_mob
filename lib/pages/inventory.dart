@@ -16,6 +16,7 @@ import 'package:workmanager/workmanager.dart';
 
 String? selValue = null;
 String comment = "";
+NotificationService _notificationService = NotificationService();
 
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
@@ -47,9 +48,12 @@ void callbackDispatcher() {
         body: jsoned);
 
     if(response.statusCode == 200){
+      await _notificationService.showNotifications("Инвентаризация пройдена");
       return Future.value(true);
     }
     else{
+      var error = Error.fromResponse(response);
+      await _notificationService.showNotifications("Ошибка при проведении инвентаризации. ${error.Message}");
       return Future.value(false);
       // var error = Error.fromResponse(response);
       // var errorMessage = "${error.Message} при обращаении к ${error.Path}";
@@ -68,6 +72,7 @@ class Inventory extends StatefulWidget {
 }
 
 class _InventoryState extends State<Inventory> {
+
   late bool _locationServiceEnabled;
   late PermissionStatus _locationPermissionGranted;
   User? user;
@@ -81,10 +86,7 @@ class _InventoryState extends State<Inventory> {
   LatLng _userLocation = const LatLng(53.31, 38.1);
 
   Future<LatLng> getUserLocation() async {
-    Workmanager().initialize(
-        callbackDispatcher, // The top level function, aka callbackDispatcher
-        isInDebugMode: false // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
-    );
+    Workmanager().initialize(callbackDispatcher);
     Location location = Location();
     var culturesStored = await storage.read(key: "Cultures");
     String culturesJson = "";

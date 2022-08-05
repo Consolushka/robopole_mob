@@ -5,6 +5,8 @@ import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:camera/camera.dart';
 import 'package:robopole_mob/pages/auth.dart';
 
+import 'utils.dart';
+
 List<CameraDescription> cameras = [];
 
 Future<void> main() async {
@@ -12,6 +14,7 @@ Future<void> main() async {
   // Ensure that plugin services are initialized so that `availableCameras()`
   // can be called before `runApp()`
   WidgetsFlutterBinding.ensureInitialized();
+  NotificationService().init();
 
   // Obtain a list of the available cameras on the device.
   cameras = await availableCameras();
