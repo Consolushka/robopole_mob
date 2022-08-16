@@ -56,10 +56,10 @@ dev_dependencies:
 #
 #
 flutter_icons:
-  image_path: "assets/icon/icon.png"
+  image_path: "assets/icon/photo_2022-08-15_09-57-56.png"
   android: true
   adaptive_icon_background: "#ffffff"
-  adaptive_icon_foreground: "assets/icon/icon.png"
+  adaptive_icon_foreground: "assets/icon/photo_2022-08-15_09-57-56.png"
   ios: true
 
   # The "flutter_lints" package below contains a set of recommended lints to

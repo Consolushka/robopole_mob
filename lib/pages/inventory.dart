@@ -14,52 +14,53 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:robopole_mob/pages/auth.dart';
 import 'package:workmanager/workmanager.dart';
 
-String? selValue = null;
+String? selCulture = null;
+String? selPartner = null;
 String comment = "";
 NotificationService _notificationService = NotificationService();
+List<String> invs = [];
 
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     var userToken = inputData!["UserToken"] as String;
-    var decodedMap = jsonDecode(inputData["Inventory"]);
+    List inentory = jsonDecode(inputData["Inventory"]) as List;
+    for (String invetn in inentory) {
+      LocationInventory inv = LocationInventory.fromJson(jsonDecode(invetn));
+      if (inv.PhotosNames!.isNotEmpty) {
+        var request = http.MultipartRequest(
+            'POST', Uri.parse(APIUri.Inventory.SavePhotos));
+        request.headers.addAll({"Authorization": userToken});
+        for (var image in inv.PhotosNames!) {
+          request.files
+              .add(await http.MultipartFile.fromPath('picture', image));
+        }
 
-    var inv = LocationInventory.fromJson(decodedMap);
-    List<String> imagesPaths = inputData["Images"].cast<String>();
-    if(imagesPaths.isNotEmpty){
-      var request = http.MultipartRequest('POST', Uri.parse(APIUri.Inventory.SavePhotos));
-      request.headers.addAll({"Authorization":  userToken});
-      for(var image in imagesPaths){
-        request.files.add(await http.MultipartFile.fromPath('picture', image));
+        var res = await request.send();
+        var responsed = await http.Response.fromStream(res);
+        final body =
+            (json.decode(responsed.body) as List<dynamic>).cast<String>();
+        inv.PhotosNames = body;
       }
+      var jsoned = json.encode(inv);
 
-      var res = await request.send();
-      var responsed = await http.Response.fromStream(res);
-      final body = (json.decode(responsed.body) as List<dynamic>).cast<String>();
-      inv.PhotosNames = body;
-    }
-    var jsoned = json.encode(inv);
+      var response = await http.post(Uri.parse(APIUri.Inventory.AddInventory),
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": userToken
+          },
+          body: jsoned);
 
-    var response = await http.post(
-        Uri.parse(APIUri.Inventory.AddInventory),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": userToken
-        },
-        body: jsoned);
-
-    if(response.statusCode == 200){
-      await _notificationService.showNotifications("Инвентаризация пройдена");
-      return Future.value(true);
+      if (response.statusCode == 200) {
+        final storage = const FlutterSecureStorage();
+        storage.write(key: "isPostedInventoriesLengthIsNull", value: "1");
+        await _notificationService.showNotifications("Инвентаризация пройдена");
+      } else {
+        var error = Error.fromResponse(response);
+        await _notificationService.showNotifications(
+            "Ошибка при проведении инвентаризации. ${error.Message}");
+        return Future.value(false);
+      }
     }
-    else{
-      var error = Error.fromResponse(response);
-      await _notificationService.showNotifications("Ошибка при проведении инвентаризации. ${error.Message}");
-      return Future.value(false);
-      // var error = Error.fromResponse(response);
-      // var errorMessage = "${error.Message} при обращаении к ${error.Path}";
-      // showErrorDialog(errorMessage);
-    }
-    Workmanager().cancelAll();
     return Future.value(true);
   });
 }
@@ -72,7 +73,6 @@ class Inventory extends StatefulWidget {
 }
 
 class _InventoryState extends State<Inventory> {
-
   late bool _locationServiceEnabled;
   late PermissionStatus _locationPermissionGranted;
   User? user;
@@ -80,10 +80,19 @@ class _InventoryState extends State<Inventory> {
   List<AgroCulture> availableCultures = [];
 
   String? selectedValue = null;
-  List<DropdownMenuItem<String>> dropitems = [];
+  List<DropdownMenuItem<String>> culturesItems = [];
+  List<DropdownMenuItem<String>> partnersItems = [];
 
   final storage = const FlutterSecureStorage();
   LatLng _userLocation = const LatLng(53.31, 38.1);
+
+  @override
+  void initState() {
+    Workmanager().initialize(
+        callbackDispatcher, // The top level function, aka callbackDispatcher
+        );
+    super.initState();
+  }
 
   Future<LatLng> getUserLocation() async {
     Location location = Location();
@@ -91,8 +100,7 @@ class _InventoryState extends State<Inventory> {
     String culturesJson = "";
     user = User.fromJson(await storage.read(key: "User") as String);
     if (culturesStored == null) {
-      var response = await http.get(
-          Uri.parse(APIUri.Inventory.AllCultures),
+      var response = await http.get(Uri.parse(APIUri.Inventory.AllCultures),
           headers: {"Authorization": user!.Token as String});
       if (response.statusCode == 200) {
         culturesJson = response.body;
@@ -106,12 +114,12 @@ class _InventoryState extends State<Inventory> {
     (jsonDecode(culturesJson) as List).forEach((element) {
       availableCultures.add(AgroCulture.fromMap(element));
     });
-    dropitems = [];
+    culturesItems = [];
 
     for (int i = 0; i < availableCultures.length - 1; i++) {
       var element = availableCultures[i];
       if (element.ParentID == 0) {
-        dropitems.add(DropdownMenuItem(
+        culturesItems.add(DropdownMenuItem(
           child: Text(element.Name!),
           value: "${element.ID}",
         ));
@@ -137,6 +145,38 @@ class _InventoryState extends State<Inventory> {
 
     final _locationData = await location.getLocation();
     _userLocation = LatLng(_locationData.latitude!, _locationData.longitude!);
+
+    if (partnersItems.length != 0) {
+      return LatLng(_locationData.latitude!, _locationData.longitude!);
+    }
+
+    var partnersStorage = await storage.read(key: "Partners");
+    String partnersJson = "";
+    user = User.fromJson(await storage.read(key: "User") as String);
+
+    if (partnersStorage == null) {
+      var part =
+          await http.get(Uri.parse(APIUri.Partner.AvailablePartners), headers: {
+        HttpHeaders.authorizationHeader: user!.Token as String,
+      });
+      if (part.statusCode == 200) {
+        partnersJson = part.body;
+        await storage.write(key: "Partners", value: part.body);
+      } else {
+        var error = Error.fromResponse(part);
+      }
+    } else {
+      partnersJson = partnersStorage;
+    }
+
+    var decodedPartners = jsonDecode(partnersJson) as List;
+
+    for (var partner in decodedPartners) {
+      partnersItems.add(DropdownMenuItem(
+        child: Text(partner["name"]),
+        value: "${partner["id"]}",
+      ));
+    }
     return LatLng(_locationData.latitude!, _locationData.longitude!);
   }
 
@@ -154,7 +194,7 @@ class _InventoryState extends State<Inventory> {
     );
   }
 
-  void showLoader(){
+  void showLoader() {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -162,10 +202,12 @@ class _InventoryState extends State<Inventory> {
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: const [SpinKitRing(
-            color: Colors.deepOrangeAccent,
-            size: 100,
-          )],
+          children: const [
+            SpinKitRing(
+              color: Colors.deepOrangeAccent,
+              size: 100,
+            )
+          ],
         );
       },
     );
@@ -174,61 +216,57 @@ class _InventoryState extends State<Inventory> {
   void showErrorDialog(errorMessage) {
     showDialog(
         context: context,
-        builder: (BuildContext context) =>
-            AlertDialog(
+        builder: (BuildContext context) => AlertDialog(
               title: const Text("Ошибка"),
               content: Text(errorMessage),
               actions: [
                 ElevatedButton(
                     onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                        primary: Colors.red
-                    ),
+                    style: ElevatedButton.styleFrom(primary: Colors.red),
                     child: const Text("Ok"))
               ],
-            )
-    );
+            ));
   }
 
   void showOKDialog() {
     showDialog(
         context: context,
-        builder: (BuildContext context) =>
-            AlertDialog(
+        builder: (BuildContext context) => AlertDialog(
               title: const Text("Инвентаризация проведена"),
               actions: [
                 ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                        primary: Colors.green
-                    ),
+                    onPressed: () {
+                      selCulture = null;
+                      imagePaths = [];
+                      comment = "";
+                      Navigator.pop(context);
+                      setState((){});
+                    },
+                    style: ElevatedButton.styleFrom(primary: Colors.green),
                     child: const Text("Ok"))
               ],
-            )
-    );
+            ));
   }
 
-  Future<void> PostInventory () async{
+  Future<void> PostInventory(inv) async {
     showLoader();
-    Location location = Location();
-    final _locationData = await location.getLocation();
-    LocationInventory inv = LocationInventory(0, _locationData.latitude!, _locationData.longitude!, int.parse(selValue!), comment, [""]);
-    if(imagePaths.isNotEmpty){
-      var request = http.MultipartRequest('POST', Uri.parse(APIUri.Inventory.SavePhotos));
+    if (inv.PhotosNames.isNotEmpty) {
+      var request =
+          http.MultipartRequest('POST', Uri.parse(APIUri.Inventory.SavePhotos));
       request.headers.addAll({"Authorization": user!.Token as String});
-      for(var image in imagePaths){
+      for (var image in inv.PhotosNames) {
         request.files.add(await http.MultipartFile.fromPath('picture', image));
       }
 
       var res = await request.send();
       var responsed = await http.Response.fromStream(res);
-      final body = (json.decode(responsed.body) as List<dynamic>).cast<String>();
+      final body =
+          (json.decode(responsed.body) as List<dynamic>).cast<String>();
       inv.PhotosNames = body;
     }
     var jsoned = json.encode(inv);
 
-    var response = await http.post(
-        Uri.parse(APIUri.Inventory.AddInventory),
+    var response = await http.post(Uri.parse(APIUri.Inventory.AddInventory),
         headers: {
           "Content-Type": "application/json",
           "Authorization": user!.Token as String
@@ -237,15 +275,14 @@ class _InventoryState extends State<Inventory> {
 
     Navigator.pop(context);
 
-    if(response.statusCode == 200){
+    if (response.statusCode == 200) {
       showOKDialog();
-    }
-    else{
+    } else {
       var error = Error.fromResponse(response);
       var errorMessage = "${error.Message} при обращаении к ${error.Path}";
       showErrorDialog(errorMessage);
     }
-}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -278,14 +315,16 @@ class _InventoryState extends State<Inventory> {
                                 fontSize: 24,
                               ),
                             ),
-                          )
-                      ),
+                          )),
                       ListTile(
                         leading: const Icon(Icons.alt_route),
                         title: const Text('Выбор функционала'),
                         onTap: () {
-                          Navigator.pushAndRemoveUntil(context,
-                              MaterialPageRoute(builder: (context) => const FunctionalPage()), (route) => false);
+                          Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const FunctionalPage()),
+                              (route) => false);
                         },
                       ),
                       ListTile(
@@ -296,16 +335,17 @@ class _InventoryState extends State<Inventory> {
                           await storage.delete(key: "Partners");
                           await storage.delete(key: "Fields");
                           await storage.delete(key: "Cultures");
-                          Navigator.pushAndRemoveUntil(context,
-                              MaterialPageRoute(builder: (context) => const Auth()), (route) => false);
+                          Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const Auth()),
+                              (route) => false);
                         },
                       ),
                       ListTile(
                           leading: Icon(Icons.info_outline),
                           title: Text('Обновить данные'),
-                          onTap: () async {
-                          }
-                      ),
+                          onTap: () async {}),
                     ],
                   ),
                 ),
@@ -326,38 +366,58 @@ class _InventoryState extends State<Inventory> {
                       child: Column(
                         children: [
                           const SizedBox(
-                            height: 20,
-                          ),
-                          const Align(
+                            height: 15,
+                          ),const Align(
                             alignment: Alignment.centerLeft,
-                            child: Text("Выбирете культуру"),
+                            child: Text("Выберете хозяйство", style: TextStyle(fontSize: 18),),
                           ),
                           const SizedBox(
-                            height: 10,
+                            height: 5,
                           ),
                           Align(
                             alignment: Alignment.centerLeft,
                             child: DropdownButton<String>(
                               isExpanded: true,
-                              value: selValue,
-                              items: dropitems,
+                              value: selPartner,
+                              items: partnersItems,
                               onChanged: (String? value) {
-                                selValue = value;
+                                selPartner = value;
                                 setState(() {});
                               },
                             ),
                           ),
                           const SizedBox(
-                            height: 20,
+                            height: 15,
+                          ),const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text("Выберете культуру", style: TextStyle(fontSize: 18),),
+                          ),
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: DropdownButton<String>(
+                              isExpanded: true,
+                              value: selCulture,
+                              items: culturesItems,
+                              onChanged: (String? value) {
+                                selCulture = value;
+                                setState(() {});
+                              },
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 15,
                           ),
                           const Align(
                             alignment: Alignment.centerLeft,
-                            child: Text("Добавте комментарий"),
+                            child: Text("Добавте комментарий", style: TextStyle(fontSize: 18),),
                           ),
                           TextFormField(
                             maxLines: null,
                             initialValue: comment,
-                            style: const TextStyle(fontSize: 20),
+                            style: const TextStyle(fontSize: 16),
                             decoration: const InputDecoration(
                               hintText: "Комментарий",
                             ),
@@ -366,24 +426,28 @@ class _InventoryState extends State<Inventory> {
                             },
                           ),
                           const SizedBox(
-                            height: 20,
+                            height: 15,
                           ),
                           findImage(),
                           const SizedBox(
-                            height: 15,
+                            height: 10,
                           ),
                           Align(
                             alignment: Alignment.centerLeft,
-                            child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pushAndRemoveUntil(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                          const CameraView()),
-                                          (route) => false);
-                                },
-                                child: const Icon(Icons.add)),
+                            child: SizedBox(
+                              height: 60,
+                              width: 100,
+                              child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pushAndRemoveUntil(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                            const CameraView()),
+                                            (route) => false);
+                                  },
+                                  child: const Icon(Icons.camera_alt_outlined, size: 40,)),
+                            )
                           )
                         ],
                       ),
@@ -394,60 +458,106 @@ class _InventoryState extends State<Inventory> {
               Align(
                 alignment: Alignment.bottomRight,
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 15, right: 15),
-                  child: FloatingActionButton(
-                  heroTag: "confirm",
-                  onPressed: () async {
-                    if(selValue==null){
-                      showErrorDialog("Выберете культуру");
-                    }
-                    else{
-                      Workmanager().cancelAll();
-                      Location location = Location();
-                      final _locationData = await location.getLocation();
-                      LocationInventory inv = LocationInventory(0, _locationData.latitude!, _locationData.longitude!, int.parse(selValue!), comment, []);
-                      var encoded = jsonEncode(inv);
-                      try {
-                        await InternetAddress.lookup('example.com');
-                      } on SocketException catch (_) {
-                        showErrorDialog("Отстуствует соеденение с интернетом. Инвентаризация проведется с появлением соединения");
-                      }
-                      Workmanager().initialize(
-                          callbackDispatcher, // The top level function, aka callbackDispatcher
-                          isInDebugMode: false // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
-                      );
-                      Workmanager().registerOneOffTask(
-                          "posting-inventory",
-                          "simpleTask",
-                        constraints: Constraints(networkType: NetworkType.connected),
-                        inputData: {
-                            "Inventory": encoded,
-                            "Images": imagePaths,
-                            "UserToken": user!.Token
+                  padding: const EdgeInsets.only(bottom: 10, right: 15),
+                  child: SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: FloatingActionButton(
+                      heroTag: "confirm",
+                      elevation: 2,
+                      onPressed: () async {
+                        if (selCulture == null) {
+                          showErrorDialog("Выберете культуру");
+                          return;
                         }
-                      );
-                    }
-                  },
-                  backgroundColor: Colors.green,
-                  child: const Icon(Icons.check),
-                ),),
+                        if (selPartner == null) {
+                          showErrorDialog("Выберете хозяйство");
+                          return;
+                        }
+                        Workmanager().cancelAll();
+                        Location location = Location();
+                        final _locationData = await location.getLocation();
+                        LocationInventory inv = LocationInventory(
+                            0,
+                            _locationData.latitude!,
+                            _locationData.longitude!,
+                            int.parse(selCulture!),
+                            int.parse(selPartner!),
+                            comment,
+                            imagePaths);
+                        var encoded = jsonEncode(inv);
+                        try {
+                          await InternetAddress.lookup('example.com');
+                          invs = [];
+                          await PostInventory(inv);
+                        } on SocketException catch (_) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              margin: EdgeInsets.only(right: 100, left: 80),
+                              content: const Text(
+                                'Инвентаризация проведется при подключении к интернету',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                              backgroundColor: Colors.redAccent,
+                              behavior: SnackBarBehavior.floating,
+                              // action: SnackBarAction(
+                              //   label: 'Action',
+                              //   onPressed: () {
+                              //     // Code to execute.
+                              //   },
+                              // ),
+                            ),
+                          );
+                          if (await storage.read(
+                              key: "isPostedInventoriesLengthIsNull") ==
+                              "1") {
+                            invs = [];
+                          }
+                          invs.add(encoded);
+                          var e = jsonEncode(invs);
+                          var encodedInventories = Map();
+                          encodedInventories["invs"] = e;
+                          Workmanager().registerOneOffTask(
+                              "${DateTime.now()}", "${DateTime.now()}",
+                              existingWorkPolicy: ExistingWorkPolicy.append,
+                              constraints:
+                                  Constraints(networkType: NetworkType.connected),
+                              inputData: {
+                                "Inventory": e,
+                                "UserToken": user!.Token
+                              });
+                          await storage.write(
+                              key: "isPostedInventoriesLengthIsNull", value: "0");
+                          selCulture = null;
+                          imagePaths = [];
+                          comment = "";
+                          // Navigator.pop(context);
+                          setState((){});
+                        }
+                      },
+                      backgroundColor: Colors.green,
+                      child: const Icon(Icons.check, size: 40,),
+                    ),
+                  )
+                ),
               ),
               Align(
                 alignment: Alignment.bottomLeft,
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 15, left: 15),
+                  padding: const EdgeInsets.only(bottom: 10, left: 15),
                   child: FloatingActionButton(
                     heroTag: "clearData",
                     onPressed: () {
-                      selValue = null;
+                      selCulture = null;
+                      selPartner = null;
                       imagePaths = [];
                       comment = "";
-                      setState((){});
+                      setState(() {});
                     },
                     backgroundColor: Colors.redAccent,
                     child: const Icon(Icons.delete),
                   ),
-        ),
+                ),
               ),
             ],
           );
@@ -457,11 +567,12 @@ class _InventoryState extends State<Inventory> {
             body: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
-              children: const [SpinKitRing(
-                color: Colors.deepOrangeAccent,
-                size: 100,
-              )],
-
+              children: const [
+                SpinKitRing(
+                  color: Colors.deepOrangeAccent,
+                  size: 100,
+                )
+              ],
             ),
           );
         }

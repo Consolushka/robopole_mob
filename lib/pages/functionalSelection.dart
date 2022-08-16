@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:robopole_mob/main.dart';
 import 'package:robopole_mob/pages/fields.dart';
 import 'package:robopole_mob/pages/inventory.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class FunctionalPage extends StatefulWidget {
   const FunctionalPage({Key? key}) : super(key: key);
@@ -10,6 +12,8 @@ class FunctionalPage extends StatefulWidget {
 }
 
 class _FunctionalPageState extends State<FunctionalPage> {
+  final storage = FlutterSecureStorage();
+
   @override
   Widget build(BuildContext context) {
 
@@ -20,7 +24,7 @@ class _FunctionalPageState extends State<FunctionalPage> {
           ),
           body: Align(
             alignment: Alignment.center,
-            child: Row(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
@@ -30,16 +34,18 @@ class _FunctionalPageState extends State<FunctionalPage> {
                     style: ElevatedButton.styleFrom(
                         primary: Colors.white,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15))),
+                            borderRadius: BorderRadius.circular(10))),
                     child: Container(
-                      height: 75,
-                      padding: EdgeInsets.zero,
-                      child: Column(
+                      height: 180,
+                        width: 300,
+                        padding: EdgeInsets.only(left: 20),
+                      child: Row(
                         children: const [
                           Icon(Icons.add_business, size: 50,color: Colors.black54,),
+                          SizedBox(width: 20,),
                           Text(
                             "Инвентаризация",
-                            style: TextStyle(fontSize: 10,color: Colors.black54),
+                            style: TextStyle(fontSize: 26,color: Colors.black54),
                           )
                         ],
                       )
@@ -51,17 +57,45 @@ class _FunctionalPageState extends State<FunctionalPage> {
                     style: ElevatedButton.styleFrom(
                         primary: Colors.white,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15))),
+                            borderRadius: BorderRadius.circular(10))),
                     child: Container(
-                        height: 75,
-                        width: 75,
-                        padding: EdgeInsets.zero,
-                        child: Column(
+                        height: 180,
+                        width: 300,
+                        padding: EdgeInsets.only(left: 20),
+                        child: Row(
                           children: const [
                             Icon(Icons.info_outline, size: 50,color: Colors.black54,),
+                            SizedBox(width: 20,),
                             Text(
                               "Информация",
-                              style: TextStyle(fontSize: 10,color: Colors.black54),
+                              style: TextStyle(fontSize: 26,color: Colors.black54),
+                            )
+                          ],
+                        )
+                    )),
+                ElevatedButton(
+                    onPressed: ()async {
+                      await storage.delete(key: "User");
+                      await storage.delete(key: "Partners");
+                      await storage.delete(key: "Fields");
+                      Navigator.pushAndRemoveUntil(context,
+                          MaterialPageRoute(builder: (context) => const NoAuthed()), (route) => false);
+                    },
+                    style: ElevatedButton.styleFrom(
+                        primary: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10))),
+                    child: Container(
+                        height: 180,
+                        width: 300,
+                        padding: EdgeInsets.only(left: 20),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.logout, size: 50,color: Colors.black54,),
+                            SizedBox(width: 20,),
+                            Text(
+                              "Выйти",
+                              style: TextStyle(fontSize: 26,color: Colors.black54),
                             )
                           ],
                         )

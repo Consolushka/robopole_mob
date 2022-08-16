@@ -5,6 +5,7 @@ import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:robopole_mob/utils.dart';
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class Auth extends StatefulWidget {
   const Auth({Key? key}) : super(key: key);
@@ -19,6 +20,23 @@ class _AuthState extends State<Auth> {
   bool isError = false;
   String errorMessage = '';
   final storage = const FlutterSecureStorage();
+
+  void showLoader(){
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: const [SpinKitRing(
+            color: Colors.deepOrangeAccent,
+            size: 100,
+          )],
+        );
+      },
+    );
+  }
 
   void auth() async{
     var response = await http.post(
@@ -55,10 +73,8 @@ class _AuthState extends State<Auth> {
       }
     }
     else{
-      debugPrint(response.body);
-      debugPrint(utf8.decode(response.bodyBytes));
       var error = Error.fromResponse(response);
-      errorMessage = "${error.Message} при обращаении к ${error.Path}";
+      errorMessage = "${error.Message}";
       showErrorDialog();
     }
   }
@@ -67,11 +83,13 @@ class _AuthState extends State<Auth> {
     showDialog(
         context: context,
         builder: (BuildContext context)=>AlertDialog(
-          title: const Text("Ошибка"),
-          content: Text(errorMessage),
+          content: Text(errorMessage, style: TextStyle(fontSize: 24),),
           actions: [
             ElevatedButton(
-                onPressed: ()=>Navigator.pop(context),
+                onPressed: () {
+                  Navigator.pop(context);
+                  // Navigator.pop(context);
+                },
                 style: ElevatedButton.styleFrom(
                     primary: Colors.red
                 ),
