@@ -3,8 +3,8 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 
-String APIHost = "http://devapi.robopole.ru";
-// String APIHost = "http://192.168.1.10:7196";
+// String APIHost = "http://devapi.robopole.ru";
+String APIHost = "http://192.168.1.10:7196";
 String APIVersion = "/v1";
 String UserController = "/user";
 String PartnerController = "/partner";
@@ -38,6 +38,7 @@ class _InventoryController{
   static String route = "$APIHost$APIVersion$InventoryController";
   String AllCultures = "$route/get-all-cultures";
   String SavePhotos = "$route/save-photos";
+  String SaveAudio = "$route/save-audio";
   String AddInventory = "$route/add-inventory";
 }
 

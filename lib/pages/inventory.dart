@@ -13,9 +13,12 @@ import 'package:robopole_mob/pages/camera_preview.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:robopole_mob/pages/auth.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:permission_handler/permission_handler.dart' as PH;
 
 String? selCulture = null;
 String? selPartner = null;
+int audioDuration = 0;
 String comment = "";
 NotificationService _notificationService = NotificationService();
 List<String> invs = [];
@@ -40,6 +43,19 @@ void callbackDispatcher() {
         final body =
             (json.decode(responsed.body) as List<dynamic>).cast<String>();
         inv.PhotosNames = body;
+      }
+
+      if (inv.AudioName != null && inv.AudioName != "") {
+        var request =
+        http.MultipartRequest('POST', Uri.parse(APIUri.Inventory.SaveAudio));
+        request.headers.addAll({"Authorization": userToken});
+        request.files
+            .add(await http.MultipartFile.fromPath('audio', inv.AudioName!));
+
+        var res = await request.send();
+        var responsed = await http.Response.fromStream(res);
+        final body = responsed.body;
+        inv.AudioName = body;
       }
       var jsoned = json.encode(inv);
 
@@ -75,11 +91,17 @@ class Inventory extends StatefulWidget {
 class _InventoryState extends State<Inventory> {
   late bool _locationServiceEnabled;
   late PermissionStatus _locationPermissionGranted;
+
+  final recorder = FlutterSoundRecorder();
+  bool isRecorderReady = false;
+
   User? user;
 
   List<AgroCulture> availableCultures = [];
 
   String? selectedValue = null;
+  String? audioPath = null;
+
   List<DropdownMenuItem<String>> culturesItems = [];
   List<DropdownMenuItem<String>> partnersItems = [];
 
@@ -89,9 +111,31 @@ class _InventoryState extends State<Inventory> {
   @override
   void initState() {
     Workmanager().initialize(
-        callbackDispatcher, // The top level function, aka callbackDispatcher
-        );
+      callbackDispatcher, // The top level function, aka callbackDispatcher
+    );
     super.initState();
+
+    initRecorder();
+  }
+
+  Future initRecorder() async {
+    final status = await PH.Permission.microphone.request();
+    debugPrint(status.toString());
+    if (status != PH.PermissionStatus.granted) {
+      throw 'Microphone permission not granted';
+    }
+
+    await recorder.openRecorder();
+    isRecorderReady = true;
+
+    recorder.setSubscriptionDuration(const Duration(milliseconds: 1000));
+  }
+
+  @override
+  void dispose() {
+    recorder.closeRecorder();
+
+    super.dispose();
   }
 
   Future<LatLng> getUserLocation() async {
@@ -239,8 +283,10 @@ class _InventoryState extends State<Inventory> {
                       selCulture = null;
                       imagePaths = [];
                       comment = "";
+                      audioPath = "";
+                      audioDuration = 0;
                       Navigator.pop(context);
-                      setState((){});
+                      setState(() {});
                     },
                     style: ElevatedButton.styleFrom(primary: Colors.green),
                     child: const Text("Ok"))
@@ -264,8 +310,20 @@ class _InventoryState extends State<Inventory> {
           (json.decode(responsed.body) as List<dynamic>).cast<String>();
       inv.PhotosNames = body;
     }
-    var jsoned = json.encode(inv);
 
+    if (inv.AudioName != null && inv.AudioName != "") {
+      var request =
+          http.MultipartRequest('POST', Uri.parse(APIUri.Inventory.SaveAudio));
+      request.headers.addAll({"Authorization": user!.Token as String});
+      request.files
+          .add(await http.MultipartFile.fromPath('audio', inv.AudioName));
+
+      var res = await request.send();
+      var responsed = await http.Response.fromStream(res);
+      final body = responsed.body;
+      inv.AudioName = body;
+    }
+    var jsoned = json.encode(inv);
     var response = await http.post(Uri.parse(APIUri.Inventory.AddInventory),
         headers: {
           "Content-Type": "application/json",
@@ -282,6 +340,25 @@ class _InventoryState extends State<Inventory> {
       var errorMessage = "${error.Message} при обращаении к ${error.Path}";
       showErrorDialog(errorMessage);
     }
+  }
+
+  Future record() async {
+    if (!isRecorderReady) return;
+
+    await recorder.startRecorder(toFile: "${user!.ID}.aac");
+    setState(() {});
+  }
+
+  Future stop() async {
+    if (!isRecorderReady) return;
+    final path = await recorder.stopRecorder();
+
+    final audioFile = File(path!);
+
+    audioPath = path;
+
+    print("Recorder File in path: ${audioFile}");
+    setState(() {});
   }
 
   @override
@@ -367,9 +444,13 @@ class _InventoryState extends State<Inventory> {
                         children: [
                           const SizedBox(
                             height: 15,
-                          ),const Align(
+                          ),
+                          const Align(
                             alignment: Alignment.centerLeft,
-                            child: Text("Выберете хозяйство", style: TextStyle(fontSize: 18),),
+                            child: Text(
+                              "Выберете хозяйство",
+                              style: TextStyle(fontSize: 18),
+                            ),
                           ),
                           const SizedBox(
                             height: 5,
@@ -388,9 +469,13 @@ class _InventoryState extends State<Inventory> {
                           ),
                           const SizedBox(
                             height: 15,
-                          ),const Align(
+                          ),
+                          const Align(
                             alignment: Alignment.centerLeft,
-                            child: Text("Выберете культуру", style: TextStyle(fontSize: 18),),
+                            child: Text(
+                              "Выберете культуру",
+                              style: TextStyle(fontSize: 18),
+                            ),
                           ),
                           const SizedBox(
                             height: 5,
@@ -412,7 +497,10 @@ class _InventoryState extends State<Inventory> {
                           ),
                           const Align(
                             alignment: Alignment.centerLeft,
-                            child: Text("Добавте комментарий", style: TextStyle(fontSize: 18),),
+                            child: Text(
+                              "Добавте комментарий",
+                              style: TextStyle(fontSize: 18),
+                            ),
                           ),
                           TextFormField(
                             maxLines: null,
@@ -432,22 +520,72 @@ class _InventoryState extends State<Inventory> {
                           const SizedBox(
                             height: 10,
                           ),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: SizedBox(
-                              height: 60,
-                              width: 100,
-                              child: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.pushAndRemoveUntil(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                            const CameraView()),
-                                            (route) => false);
-                                  },
-                                  child: const Icon(Icons.camera_alt_outlined, size: 40,)),
-                            )
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              SizedBox(
+                                height: 60,
+                                width: 100,
+                                child: ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.pushAndRemoveUntil(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const CameraView()),
+                                          (route) => false);
+                                    },
+                                    child: const Icon(
+                                      Icons.camera_alt_outlined,
+                                      size: 40,
+                                    )),
+                              ),
+                              StreamBuilder<RecordingDisposition>(
+                                  stream: recorder.onProgress,
+                                  builder: (context, snapshot) {
+                                    if (audioDuration == 0) {
+                                      final duration = snapshot.hasData
+                                          ? snapshot.data!.duration
+                                          : Duration.zero;
+                                      audioDuration = duration.inSeconds;
+                                      return Text('${duration.inSeconds} c');
+                                    }
+                                    else{
+                                      final duration = snapshot.hasData
+                                          ? snapshot.data!.duration
+                                          : Duration.zero;
+                                      if(audioDuration+1==duration.inSeconds){
+                                        audioDuration = duration.inSeconds;
+                                        return Text('${duration.inSeconds} c');
+                                      }
+                                      else{
+                                        return Text('$audioDuration c');
+                                      }
+                                    }
+                                  }),
+                              SizedBox(
+                                height: 60,
+                                width: 60,
+                                child: ElevatedButton(
+                                    onPressed: () async {
+                                      debugPrint("pressed");
+                                      if (recorder.isRecording) {
+                                        await stop();
+                                      } else {
+                                        await record();
+                                      }
+                                    },
+                                    child: Icon(
+                                      recorder.isRecording
+                                          ? Icons.stop
+                                          : Icons.mic,
+                                      size: 30,
+                                    ),
+                                style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(
+                                  borderRadius: new BorderRadius.circular(60.0),
+                                ),),),
+                              )
+                            ],
                           )
                         ],
                       ),
@@ -458,88 +596,93 @@ class _InventoryState extends State<Inventory> {
               Align(
                 alignment: Alignment.bottomRight,
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 10, right: 15),
-                  child: SizedBox(
-                    width: 80,
-                    height: 80,
-                    child: FloatingActionButton(
-                      heroTag: "confirm",
-                      elevation: 2,
-                      onPressed: () async {
-                        if (selCulture == null) {
-                          showErrorDialog("Выберете культуру");
-                          return;
-                        }
-                        if (selPartner == null) {
-                          showErrorDialog("Выберете хозяйство");
-                          return;
-                        }
-                        Workmanager().cancelAll();
-                        Location location = Location();
-                        final _locationData = await location.getLocation();
-                        LocationInventory inv = LocationInventory(
-                            0,
-                            _locationData.latitude!,
-                            _locationData.longitude!,
-                            int.parse(selCulture!),
-                            int.parse(selPartner!),
-                            comment,
-                            imagePaths);
-                        var encoded = jsonEncode(inv);
-                        try {
-                          await InternetAddress.lookup('example.com');
-                          invs = [];
-                          await PostInventory(inv);
-                        } on SocketException catch (_) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              margin: EdgeInsets.only(right: 100, left: 80),
-                              content: const Text(
-                                'Инвентаризация проведется при подключении к интернету',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                              backgroundColor: Colors.redAccent,
-                              behavior: SnackBarBehavior.floating,
-                              // action: SnackBarAction(
-                              //   label: 'Action',
-                              //   onPressed: () {
-                              //     // Code to execute.
-                              //   },
-                              // ),
-                            ),
-                          );
-                          if (await storage.read(
-                              key: "isPostedInventoriesLengthIsNull") ==
-                              "1") {
-                            invs = [];
+                    padding: const EdgeInsets.only(bottom: 10, right: 15),
+                    child: SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: FloatingActionButton(
+                        heroTag: "confirm",
+                        elevation: 2,
+                        onPressed: () async {
+                          if (selCulture == null) {
+                            showErrorDialog("Выберете культуру");
+                            return;
                           }
-                          invs.add(encoded);
-                          var e = jsonEncode(invs);
-                          var encodedInventories = Map();
-                          encodedInventories["invs"] = e;
-                          Workmanager().registerOneOffTask(
-                              "${DateTime.now()}", "${DateTime.now()}",
-                              existingWorkPolicy: ExistingWorkPolicy.append,
-                              constraints:
-                                  Constraints(networkType: NetworkType.connected),
-                              inputData: {
-                                "Inventory": e,
-                                "UserToken": user!.Token
-                              });
-                          await storage.write(
-                              key: "isPostedInventoriesLengthIsNull", value: "0");
-                          selCulture = null;
-                          imagePaths = [];
-                          comment = "";
-                          // Navigator.pop(context);
-                          setState((){});
-                        }
-                      },
-                      backgroundColor: Colors.green,
-                      child: const Icon(Icons.check, size: 40,),
-                    ),
-                  )
-                ),
+                          if (selPartner == null) {
+                            showErrorDialog("Выберете хозяйство");
+                            return;
+                          }
+                          Workmanager().cancelAll();
+                          Location location = Location();
+                          final _locationData = await location.getLocation();
+                          LocationInventory inv = LocationInventory(
+                              0,
+                              _locationData.latitude!,
+                              _locationData.longitude!,
+                              int.parse(selCulture!),
+                              int.parse(selPartner!),
+                              comment,
+                              imagePaths,
+                              audioPath);
+                          var encoded = jsonEncode(inv);
+                          try {
+                            await InternetAddress.lookup('example.com');
+                            invs = [];
+                            await PostInventory(inv);
+                          } on SocketException catch (_) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                margin: EdgeInsets.only(right: 100, left: 80),
+                                content: const Text(
+                                  'Инвентаризация проведется при подключении к интернету',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                                backgroundColor: Colors.redAccent,
+                                behavior: SnackBarBehavior.floating,
+                                // action: SnackBarAction(
+                                //   label: 'Action',
+                                //   onPressed: () {
+                                //     // Code to execute.
+                                //   },
+                                // ),
+                              ),
+                            );
+                            if (await storage.read(
+                                    key: "isPostedInventoriesLengthIsNull") ==
+                                "1") {
+                              invs = [];
+                            }
+                            invs.add(encoded);
+                            var e = jsonEncode(invs);
+                            var encodedInventories = Map();
+                            encodedInventories["invs"] = e;
+                            Workmanager().registerOneOffTask(
+                                "${DateTime.now()}", "${DateTime.now()}",
+                                existingWorkPolicy: ExistingWorkPolicy.append,
+                                constraints: Constraints(
+                                    networkType: NetworkType.connected),
+                                inputData: {
+                                  "Inventory": e,
+                                  "UserToken": user!.Token
+                                });
+                            await storage.write(
+                                key: "isPostedInventoriesLengthIsNull",
+                                value: "0");
+                            selCulture = null;
+                            imagePaths = [];
+                            audioDuration = 0;
+                            comment = "";
+                            // Navigator.pop(context);
+                            setState(() {});
+                          }
+                        },
+                        backgroundColor: Colors.green,
+                        child: const Icon(
+                          Icons.check,
+                          size: 40,
+                        ),
+                      ),
+                    )),
               ),
               Align(
                 alignment: Alignment.bottomLeft,
@@ -551,6 +694,7 @@ class _InventoryState extends State<Inventory> {
                       selCulture = null;
                       selPartner = null;
                       imagePaths = [];
+                      audioDuration = 0;
                       comment = "";
                       setState(() {});
                     },

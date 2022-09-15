@@ -98,10 +98,11 @@ class LocationInventory {
   int? PartnerID;
   String? Comment;
   List<String>? PhotosNames;
+  String? AudioName;
   DateTime? Date;
 
   LocationInventory(this.ID, this.Lat, this.Lng, this.AgroCultureID, this.PartnerID,
-      this.Comment, this.PhotosNames){
+      this.Comment, this.PhotosNames, this.AudioName){
     Date = DateTime.now();
   }
 
@@ -115,6 +116,7 @@ class LocationInventory {
       "partnerID": PartnerID,
       "comment": Comment,
       "photosNames": PhotosNames,
+      "audioName": AudioName,
       "date": encDate
     };
   }
@@ -128,6 +130,7 @@ class LocationInventory {
     Comment = json["comment"];
     // List<String> lst = List<String>.filled(1, "");
     PhotosNames = json["photosNames"].cast<String>();
+    AudioName = json["audioName"];
     Date = DateTime.parse(json["date"]);
   }
 }
