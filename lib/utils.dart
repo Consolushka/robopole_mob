@@ -3,8 +3,8 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 
-// String APIHost = "http://devapi.robopole.ru";
-String APIHost = "http://192.168.1.10:7196";
+String APIHost = "http://devapi.robopole.ru";
+// String APIHost = "http://192.168.1.10:7196";
 String APIVersion = "/v1";
 String UserController = "/user";
 String PartnerController = "/partner";

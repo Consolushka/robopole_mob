@@ -46,8 +46,8 @@ void callbackDispatcher() {
       }
 
       if (inv.AudioName != null && inv.AudioName != "") {
-        var request =
-        http.MultipartRequest('POST', Uri.parse(APIUri.Inventory.SaveAudio));
+        var request = http.MultipartRequest(
+            'POST', Uri.parse(APIUri.Inventory.SaveAudio));
         request.headers.addAll({"Authorization": userToken});
         request.files
             .add(await http.MultipartFile.fromPath('audio', inv.AudioName!));
@@ -119,10 +119,13 @@ class _InventoryState extends State<Inventory> {
   }
 
   Future initRecorder() async {
-    final status = await PH.Permission.microphone.request();
-    debugPrint(status.toString());
-    if (status != PH.PermissionStatus.granted) {
-      throw 'Microphone permission not granted';
+    var check = await PH.Permission.microphone.status;
+    if(check.isDenied){
+      final status = await PH.Permission.microphone.request();
+      debugPrint(status.toString());
+      if (status != PH.PermissionStatus.granted) {
+        throw 'Microphone permission not granted';
+      }
     }
 
     await recorder.openRecorder();
@@ -169,23 +172,23 @@ class _InventoryState extends State<Inventory> {
         ));
       }
     }
-    // Check if location service is enable
-    _locationServiceEnabled = await location.serviceEnabled();
-    if (!_locationServiceEnabled) {
-      _locationServiceEnabled = await location.requestService();
-      if (!_locationServiceEnabled) {
-        return const LatLng(54.86, 38.2);
-      }
-    }
-
-    // Check if permission is granted
-    _locationPermissionGranted = await location.hasPermission();
-    if (_locationPermissionGranted == PermissionStatus.denied) {
-      _locationPermissionGranted = await location.requestPermission();
-      if (_locationPermissionGranted != PermissionStatus.granted) {
-        return const LatLng(54.86, 38.2);
-      }
-    }
+    // // Check if location service is enable
+    // _locationServiceEnabled = await location.serviceEnabled();
+    // if (!_locationServiceEnabled) {
+    //   _locationServiceEnabled = await location.requestService();
+    //   if (!_locationServiceEnabled) {
+    //     return const LatLng(54.86, 38.2);
+    //   }
+    // }
+    //
+    // // Check if permission is granted
+    // _locationPermissionGranted = await location.hasPermission();
+    // if (_locationPermissionGranted == PermissionStatus.denied) {
+    //   _locationPermissionGranted = await location.requestPermission();
+    //   if (_locationPermissionGranted != PermissionStatus.granted) {
+    //     return const LatLng(54.86, 38.2);
+    //   }
+    // }
 
     final _locationData = await location.getLocation();
     _userLocation = LatLng(_locationData.latitude!, _locationData.longitude!);
@@ -370,7 +373,7 @@ class _InventoryState extends State<Inventory> {
           return Stack(
             children: [
               Scaffold(
-                resizeToAvoidBottomInset: false,
+                resizeToAvoidBottomInset: true,
                 appBar: AppBar(
                   title: const Text("Инвентаризация"),
                   backgroundColor: Colors.deepOrangeAccent,
@@ -426,147 +429,149 @@ class _InventoryState extends State<Inventory> {
                     ],
                   ),
                 ),
-                body: Column(
-                  children: [
-                    SizedBox(
-                      height: 200,
-                      child: GoogleMap(
-                          mapType: MapType.hybrid,
-                          initialCameraPosition:
-                              CameraPosition(target: _userLocation, zoom: 18),
-                          myLocationEnabled: true,
-                          myLocationButtonEnabled: true,
-                          zoomControlsEnabled: true),
-                    ),
-                    Container(
-                      padding: EdgeInsets.only(left: 20, right: 20),
-                      child: Column(
-                        children: [
-                          const SizedBox(
-                            height: 15,
-                          ),
-                          const Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              "Выберете хозяйство",
-                              style: TextStyle(fontSize: 18),
+                body: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: 200,
+                        child: GoogleMap(
+                            mapType: MapType.hybrid,
+                            initialCameraPosition:
+                                CameraPosition(target: _userLocation, zoom: 18),
+                            myLocationEnabled: true,
+                            myLocationButtonEnabled: true,
+                            zoomControlsEnabled: true),
+                      ),
+                      Container(
+                        padding: EdgeInsets.only(left: 20, right: 20),
+                        child: Column(
+                          children: [
+                            const SizedBox(
+                              height: 15,
                             ),
-                          ),
-                          const SizedBox(
-                            height: 5,
-                          ),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: DropdownButton<String>(
-                              isExpanded: true,
-                              value: selPartner,
-                              items: partnersItems,
-                              onChanged: (String? value) {
-                                selPartner = value;
-                                setState(() {});
-                              },
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 15,
-                          ),
-                          const Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              "Выберете культуру",
-                              style: TextStyle(fontSize: 18),
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 5,
-                          ),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: DropdownButton<String>(
-                              isExpanded: true,
-                              value: selCulture,
-                              items: culturesItems,
-                              onChanged: (String? value) {
-                                selCulture = value;
-                                setState(() {});
-                              },
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 15,
-                          ),
-                          const Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              "Добавте комментарий",
-                              style: TextStyle(fontSize: 18),
-                            ),
-                          ),
-                          TextFormField(
-                            maxLines: null,
-                            initialValue: comment,
-                            style: const TextStyle(fontSize: 16),
-                            decoration: const InputDecoration(
-                              hintText: "Комментарий",
-                            ),
-                            onChanged: (text) {
-                              comment = text;
-                            },
-                          ),
-                          const SizedBox(
-                            height: 15,
-                          ),
-                          findImage(),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              SizedBox(
-                                height: 60,
-                                width: 100,
-                                child: ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.pushAndRemoveUntil(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const CameraView()),
-                                          (route) => false);
-                                    },
-                                    child: const Icon(
-                                      Icons.camera_alt_outlined,
-                                      size: 40,
-                                    )),
+                            const Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                "Выберете хозяйство",
+                                style: TextStyle(fontSize: 18),
                               ),
-                              StreamBuilder<RecordingDisposition>(
-                                  stream: recorder.onProgress,
-                                  builder: (context, snapshot) {
-                                    if (audioDuration == 0) {
-                                      final duration = snapshot.hasData
-                                          ? snapshot.data!.duration
-                                          : Duration.zero;
-                                      audioDuration = duration.inSeconds;
-                                      return Text('${duration.inSeconds} c');
-                                    }
-                                    else{
-                                      final duration = snapshot.hasData
-                                          ? snapshot.data!.duration
-                                          : Duration.zero;
-                                      if(audioDuration+1==duration.inSeconds){
+                            ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                value: selPartner,
+                                items: partnersItems,
+                                onChanged: (String? value) {
+                                  selPartner = value;
+                                  setState(() {});
+                                },
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 15,
+                            ),
+                            const Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                "Выберете культуру",
+                                style: TextStyle(fontSize: 18),
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                value: selCulture,
+                                items: culturesItems,
+                                onChanged: (String? value) {
+                                  selCulture = value;
+                                  setState(() {});
+                                },
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 15,
+                            ),
+                            const Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                "Добавте комментарий",
+                                style: TextStyle(fontSize: 18),
+                              ),
+                            ),
+                            TextFormField(
+                              maxLines: null,
+                              textInputAction: TextInputAction.go,
+                              initialValue: comment,
+                              style: const TextStyle(fontSize: 16),
+                              decoration: const InputDecoration(
+                                hintText: "Комментарий",
+                              ),
+                              onChanged: (text) {
+                                comment = text;
+                              },
+                            ),
+                            const SizedBox(
+                              height: 15,
+                            ),
+                            findImage(),
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                SizedBox(
+                                  height: 60,
+                                  width: 100,
+                                  child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pushAndRemoveUntil(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    const CameraView()),
+                                            (route) => false);
+                                      },
+                                      child: const Icon(
+                                        Icons.camera_alt_outlined,
+                                        size: 40,
+                                      )),
+                                ),
+                                StreamBuilder<RecordingDisposition>(
+                                    stream: recorder.onProgress,
+                                    builder: (context, snapshot) {
+                                      if (audioDuration == 0) {
+                                        final duration = snapshot.hasData
+                                            ? snapshot.data!.duration
+                                            : Duration.zero;
                                         audioDuration = duration.inSeconds;
                                         return Text('${duration.inSeconds} c');
+                                      } else {
+                                        final duration = snapshot.hasData
+                                            ? snapshot.data!.duration
+                                            : Duration.zero;
+                                        if (audioDuration + 1 ==
+                                            duration.inSeconds) {
+                                          audioDuration = duration.inSeconds;
+                                          return Text(
+                                              '${duration.inSeconds} c');
+                                        } else {
+                                          return Text('$audioDuration c');
+                                        }
                                       }
-                                      else{
-                                        return Text('$audioDuration c');
-                                      }
-                                    }
-                                  }),
-                              SizedBox(
-                                height: 60,
-                                width: 60,
-                                child: ElevatedButton(
+                                    }),
+                                SizedBox(
+                                  height: 60,
+                                  width: 60,
+                                  child: ElevatedButton(
                                     onPressed: () async {
                                       debugPrint("pressed");
                                       if (recorder.isRecording) {
@@ -581,16 +586,21 @@ class _InventoryState extends State<Inventory> {
                                           : Icons.mic,
                                       size: 30,
                                     ),
-                                style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(
-                                  borderRadius: new BorderRadius.circular(60.0),
-                                ),),),
-                              )
-                            ],
-                          )
-                        ],
-                      ),
-                    )
-                  ],
+                                    style: ElevatedButton.styleFrom(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            new BorderRadius.circular(60.0),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              ],
+                            )
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
                 ),
               ),
               Align(

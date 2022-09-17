@@ -3,6 +3,7 @@ import 'package:robopole_mob/main.dart';
 import 'package:robopole_mob/pages/fields.dart';
 import 'package:robopole_mob/pages/inventory.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:permission_handler/permission_handler.dart' as PH;
 
 class FunctionalPage extends StatefulWidget {
   const FunctionalPage({Key? key}) : super(key: key);
@@ -13,6 +14,23 @@ class FunctionalPage extends StatefulWidget {
 
 class _FunctionalPageState extends State<FunctionalPage> {
   final storage = FlutterSecureStorage();
+
+  @override
+  void initState(){
+    initLocation();
+    super.initState();
+  }
+
+  Future initLocation() async {
+    var check = await PH.Permission.location.status;
+    if(check.isDenied){
+      final status = await PH.Permission.location.request();
+      debugPrint(status.toString());
+      if (status != PH.PermissionStatus.granted) {
+        throw 'Microphone permission not granted';
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
