@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:robopole_mob/pages/fieldInspection.dart';
 import 'package:robopole_mob/pages/inventory.dart';
 
 import '../main.dart';
@@ -10,7 +11,9 @@ import '../main.dart';
 List<String> imagePaths = [];
 
 class CameraView extends StatefulWidget {
-  const CameraView({Key? key}) : super(key: key);
+  String page;
+
+  CameraView(this.page);
 
   @override
   State<CameraView> createState() => _CameraViewState();
@@ -46,63 +49,76 @@ class _CameraViewState extends State<CameraView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // You must wait until the controller is initialized before displaying the
-      // camera preview. Use a FutureBuilder to display a loading spinner until the
-      // controller has finished initializing.
-      body: FutureBuilder<void>(
-        future: _initializeControllerFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            // If the Future is complete, display the preview.
-            return CameraPreview(_controller);
-          } else {
-            // Otherwise, display a loading indicator.
-            return const Center(child: CircularProgressIndicator(color: Colors.deepOrangeAccent,));
-          }
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.deepOrangeAccent,
-        // Provide an onPressed callback.
-        onPressed: () async {
-          // Take the Picture in a try / catch block. If anything goes wrong,
-          // catch the error.
-          try {
-            // Ensure that the camera is initialized.
-            await _initializeControllerFuture;
+    return Stack(
+      children: [
+        Scaffold(
+          body: FutureBuilder<void>(
+            future: _initializeControllerFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                // If the Future is complete, display the preview.
+                return CameraPreview(_controller);
+              } else {
+                // Otherwise, display a loading indicator.
+                return const Center(
+                    child: CircularProgressIndicator(
+                  color: Colors.deepOrangeAccent,
+                ));
+              }
+            },
+          ),
+        ),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 50),
+            child: SizedBox(
+              height: 80,
+              width: 80,
+              child: FloatingActionButton(
+                onPressed: () async {
+                  // Take the Picture in a try / catch block. If anything goes wrong,
+                  // catch the error.
+                  try {
+                    // Ensure that the camera is initialized.
+                    await _initializeControllerFuture;
 
-            // Attempt to take a picture and get the file `image`
-            // where it was saved.
-            final image = await _controller.takePicture();
-            // GallerySaver.saveImage(image.path);
-            if (!mounted) return;
+                    // Attempt to take a picture and get the file `image`
+                    // where it was saved.
+                    final image = await _controller.takePicture();
+                    // GallerySaver.saveImage(image.path);
+                    if (!mounted) return;
 
-            // If the picture was taken, display it on a new screen.
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => DisplayPictureScreen(
-                  // Pass the automatically generated path to
-                  // the DisplayPictureScreen widget.
-                  imagePath: image.path,
-                ),
+                    // If the picture was taken, display it on a new screen.
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => DisplayPictureScreen(
+                          widget.page,
+                          image.path,
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    // If an error occurs, log the error to the console.
+                  }
+                },
+                backgroundColor: Colors.deepOrangeAccent,
+                child: const Icon(Icons.camera_alt),
               ),
-            );
-          } catch (e) {
-            // If an error occurs, log the error to the console.
-          }
-        },
-        child: const Icon(Icons.camera_alt),
-      ),
+            )
+          ),
+        ),
+      ],
     );
   }
 }
 
 // A widget that displays the picture taken by the user.
 class DisplayPictureScreen extends StatelessWidget {
-  final String imagePath;
+  DisplayPictureScreen(this.page, this.imagePath);
 
-  const DisplayPictureScreen({super.key, required this.imagePath});
+  final String imagePath;
+  final String page;
 
   @override
   Widget build(BuildContext context) {
@@ -122,42 +138,60 @@ class DisplayPictureScreen extends StatelessWidget {
           ),
         ),
         Align(
-          alignment: Alignment.bottomLeft,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: 30, left: 15),
-            child: FloatingActionButton(
-              heroTag: "close",
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const Inventory()),
+            alignment: Alignment.bottomLeft,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 30, left: 15),
+              child: FloatingActionButton(
+                heroTag: "close",
+                onPressed: () {
+                  if (page == "inventory") {
+                    Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const Inventory()),
                         (route) => false);
-              },
-              backgroundColor: Colors.redAccent,
-              child: Icon(Icons.close),
-            ),
-          )
-        ),
+                  } else {
+                    if (page == "fieldInspection") {
+                      Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const FieldInspection()),
+                          (route) => false);
+                    }
+                  }
+                },
+                backgroundColor: Colors.redAccent,
+                child: Icon(Icons.close),
+              ),
+            )),
         Align(
-          alignment: Alignment.bottomRight,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: 30, right: 15),
-            child: FloatingActionButton(
-              heroTag: "fine",
-              onPressed: () {
-                imagePaths.add(imagePath);
-                Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const Inventory()),
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 30, right: 15),
+              child: FloatingActionButton(
+                heroTag: "fine",
+                onPressed: () {
+                  imagePaths.add(imagePath);
+                  if (page == "inventory") {
+                    Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const Inventory()),
                         (route) => false);
-              },
-              backgroundColor: Colors.green,
-              child: Icon(Icons.check),
-            ),
-          )
-        )
+                  } else {
+                    if (page == "fieldInspection") {
+                      Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const FieldInspection()),
+                          (route) => false);
+                    }
+                  }
+                },
+                backgroundColor: Colors.green,
+                child: Icon(Icons.check),
+              ),
+            ))
       ],
     );
   }

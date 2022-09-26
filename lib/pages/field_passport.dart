@@ -83,9 +83,6 @@ class _FieldPassportState extends State<FieldPassport> {
 
   Widget FieldMap(){
     debugPrint(field["externalName"]);
-    // setState((){
-    //   WiFiForIoTPlugin.setEnabled(false);
-    // });
     return Container(
       height: 200,
       child: GoogleMap(
@@ -164,23 +161,6 @@ class _FieldPassportState extends State<FieldPassport> {
     createInput("agroCultureName", "Культура").forEach((element) {
       res.add(element);
     });
-    // res.add(
-    //   ElevatedButton(
-    //       onPressed: () async {
-    //       },
-    //       style: ElevatedButton.styleFrom(
-    //           primary: Colors.green,
-    //           padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
-    //           shape: RoundedRectangleBorder(
-    //               borderRadius: BorderRadius.circular(30))),
-    //       child: const Text(
-    //         "Подтвердить культуру",
-    //         style: TextStyle(fontSize: 20),
-    //       )),
-    // );
-    // res.add(
-    //   SizedBox(height: 20)
-    // );
     return res;
   }
 

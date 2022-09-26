@@ -35,24 +35,6 @@ class MapSampleState extends State<MapSample> {
   double lowest = 0.0;
   double leftest = 0.0;
 
-  void showError(Error error){
-    showDialog(
-        context: context,
-        builder: (BuildContext context)=>AlertDialog(
-          title: const Text("Ошибка"),
-          content: Text(error.Message as String),
-          actions: [
-            ElevatedButton(
-                onPressed: ()=>Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                    primary: Colors.red
-                ),
-                child: const Text("Ok"))
-          ],
-        )
-    );
-  }
-
   void filterPolygonsByPartner(int partnerId) async{
     if(partnerId==0){
       await storage.delete(key: "selectedPartnerId");
@@ -98,7 +80,7 @@ class MapSampleState extends State<MapSample> {
       }
       else{
         var error = Error.fromResponse(part);
-        showError(error);
+        showErrorDialog(context, error);
       }
     }
     else{
@@ -136,7 +118,7 @@ class MapSampleState extends State<MapSample> {
 
       if(availableFields.statusCode != 200){
         var error = Error.fromResponse(availableFields);
-        showError(error);
+        showErrorDialog(context, error);
       }
 
       fieldsJson = availableFields.body;
@@ -293,9 +275,24 @@ class MapSampleState extends State<MapSample> {
                           _polygons = {};
                           partners = [];
                           fields = [];
+                          showLoader(context);
                           await storage.delete(key: "selectedPartnerId");
                           await storage.delete(key: "Partners");
-                          await storage.delete(key: "Fields");
+                          var availableFields = await http.get(
+                              Uri.parse(APIUri.Field.UpdateFields),
+                              headers: {
+                                HttpHeaders.authorizationHeader: user.Token as String,
+                              }
+                          );
+
+                          if(availableFields.statusCode != 200){
+                            var error = Error.fromResponse(availableFields);
+                            Navigator.pop(context);
+                            showErrorDialog(context, error);
+                          }
+
+                          await storage.write(key: "Fields", value: availableFields.body);
+                          Navigator.pop(context);
                           setState(() {});
                         }
                       ),

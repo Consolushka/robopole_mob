@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:robopole_mob/main.dart';
+import 'package:robopole_mob/pages/fieldInspection.dart';
 import 'package:robopole_mob/pages/fields.dart';
 import 'package:robopole_mob/pages/inventory.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:permission_handler/permission_handler.dart' as PH;
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class FunctionalPage extends StatefulWidget {
   const FunctionalPage({Key? key}) : super(key: key);
@@ -92,12 +93,8 @@ class _FunctionalPageState extends State<FunctionalPage> {
                         )
                     )),
                 ElevatedButton(
-                    onPressed: ()async {
-                      await storage.delete(key: "User");
-                      await storage.delete(key: "Partners");
-                      await storage.delete(key: "Fields");
-                      Navigator.pushAndRemoveUntil(context,
-                          MaterialPageRoute(builder: (context) => const NoAuthed()), (route) => false);
+                    onPressed: (){
+                      Navigator.of(context).push(_createRoute(3));
                     },
                     style: ElevatedButton.styleFrom(
                         primary: Colors.white,
@@ -109,15 +106,42 @@ class _FunctionalPageState extends State<FunctionalPage> {
                         padding: EdgeInsets.only(left: 20),
                         child: Row(
                           children: const [
-                            Icon(Icons.logout, size: 50,color: Colors.black54,),
+                            Icon(FontAwesomeIcons.mapLocationDot, size: 50,color: Colors.black54,),
                             SizedBox(width: 20,),
                             Text(
-                              "Выйти",
+                              "Осмотр поля",
                               style: TextStyle(fontSize: 26,color: Colors.black54),
                             )
                           ],
                         )
-                    ))
+                    )),
+                // ElevatedButton(
+                //     onPressed: ()async {
+                //       await storage.delete(key: "User");
+                //       await storage.delete(key: "Partners");
+                //       await storage.delete(key: "Fields");
+                //       Navigator.pushAndRemoveUntil(context,
+                //           MaterialPageRoute(builder: (context) => const NoAuthed()), (route) => false);
+                //     },
+                //     style: ElevatedButton.styleFrom(
+                //         primary: Colors.white,
+                //         shape: RoundedRectangleBorder(
+                //             borderRadius: BorderRadius.circular(10))),
+                //     child: Container(
+                //         height: 180,
+                //         width: 300,
+                //         padding: EdgeInsets.only(left: 20),
+                //         child: Row(
+                //           children: const [
+                //             Icon(Icons.logout, size: 50,color: Colors.black54,),
+                //             SizedBox(width: 20,),
+                //             Text(
+                //               "Выйти",
+                //               style: TextStyle(fontSize: 26,color: Colors.black54),
+                //             )
+                //           ],
+                //         )
+                //     ))
               ],
             ),
           ),
@@ -126,37 +150,49 @@ class _FunctionalPageState extends State<FunctionalPage> {
 }
 
 Route _createRoute(int functionalId) {
-  if(functionalId == 1){
-    return PageRouteBuilder(
-      pageBuilder: (BuildContext context,
-          Animation<double> animation, //
-          Animation<double> secondaryAnimation) {
-        return const MapSample();
-      },
-      transitionsBuilder: (BuildContext context,
-          Animation<double> animation, //
-          Animation<double> secondaryAnimation,
-          Widget child) {
-        return child;
-      },
-    );
-  }
-  else{
-    return PageRouteBuilder(
-      pageBuilder: (BuildContext context,
-          Animation<double> animation, //
-          Animation<double> secondaryAnimation) {
-        return const Inventory();
-      },
-      transitionsBuilder: (BuildContext context,
-          Animation<double> animation, //
-          Animation<double> secondaryAnimation,
-          Widget child) {
-        return child;
-      },
-    );
-  }
   switch(functionalId){
     case 1:
+      return PageRouteBuilder(
+        pageBuilder: (BuildContext context,
+            Animation<double> animation, //
+            Animation<double> secondaryAnimation) {
+          return const MapSample();
+        },
+        transitionsBuilder: (BuildContext context,
+            Animation<double> animation, //
+            Animation<double> secondaryAnimation,
+            Widget child) {
+          return child;
+        },
+      );
+    case 2:
+      return PageRouteBuilder(
+        pageBuilder: (BuildContext context,
+            Animation<double> animation, //
+            Animation<double> secondaryAnimation) {
+          return const Inventory();
+        },
+        transitionsBuilder: (BuildContext context,
+            Animation<double> animation, //
+            Animation<double> secondaryAnimation,
+            Widget child) {
+          return child;
+        },
+      );
+    default:
+      return PageRouteBuilder(
+        pageBuilder: (BuildContext context,
+            Animation<double> animation, //
+            Animation<double> secondaryAnimation) {
+          return const FieldInspection();
+        },
+        transitionsBuilder: (BuildContext context,
+            Animation<double> animation, //
+            Animation<double> secondaryAnimation,
+            Widget child) {
+          return child;
+        },
+      );
+
   }
 }

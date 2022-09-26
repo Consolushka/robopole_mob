@@ -134,3 +134,45 @@ class LocationInventory {
     Date = DateTime.parse(json["date"]);
   }
 }
+
+class Inspection {
+  int? ID;
+  double? Lat;
+  double? Lng;
+  int? FieldID;
+  String? Comment;
+  List<String>? PhotosNames;
+  String? AudioName;
+  DateTime? Date;
+
+  Inspection(this.ID, this.Lat, this.Lng, this.FieldID,
+      this.Comment, this.PhotosNames, this.AudioName){
+    Date = DateTime.now();
+  }
+
+  Map toJson() {
+    var encDate = Date!.toIso8601String();
+    return {
+      "id": ID,
+      "lat": Lat,
+      "lng": Lng,
+      "fieldID": FieldID,
+      "comment": Comment,
+      "photosNames": PhotosNames,
+      "audioName": AudioName,
+      "date": encDate
+    };
+  }
+
+  Inspection.fromJson(Map<String, dynamic> json){
+    ID=json["id"];
+    Lat = json["lat"];
+    Lng = json["lng"];
+    FieldID = json["fieldID"];
+    Comment = json["comment"];
+    // List<String> lst = List<String>.filled(1, "");
+    PhotosNames = json["photosNames"].cast<String>();
+    AudioName = json["audioName"];
+    Date = DateTime.parse(json["date"]);
+  }
+}

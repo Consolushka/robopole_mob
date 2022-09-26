@@ -1,21 +1,28 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 
 String APIHost = "http://devapi.robopole.ru";
 // String APIHost = "http://192.168.1.10:7196";
+
 String APIVersion = "/v1";
 String UserController = "/user";
 String PartnerController = "/partner";
 String FieldController = "/field";
 String InventoryController ="/locationinventory";
+String FieldInspectionController = "/fieldinspection";
+String ContentController = "/content";
 
 class APIUri{
   static _UserController User= _UserController();
   static _PartnerController Partner = _PartnerController();
   static _FieldController Field = _FieldController();
   static _InventoryController Inventory = _InventoryController();
+  static _FieldInspectionController Inspection = _FieldInspectionController();
+  static _ContentController Content = _ContentController();
 }
 
 class _UserController{
@@ -31,15 +38,25 @@ class _PartnerController{
 class _FieldController{
   static String route = "$APIHost$APIVersion$FieldController";
   String AvailableFields = "$route/get-available-fieldsCoords-byUser";
+  String UpdateFields = "$route/update-fieldsCoords-byUser";
   // static String FieldData = "$route/"
 }
 
 class _InventoryController{
   static String route = "$APIHost$APIVersion$InventoryController";
   String AllCultures = "$route/get-all-cultures";
+  String AddInventory = "$route/add-inventory";
+}
+
+class _FieldInspectionController{
+  static String route = "$APIHost$APIVersion$FieldInspectionController";
+  String AddInspection = "$route/add-inspection";
+}
+
+class _ContentController{
+  static String route = "$APIHost$APIVersion$ContentController";
   String SavePhotos = "$route/save-photos";
   String SaveAudio = "$route/save-audio";
-  String AddInventory = "$route/add-inventory";
 }
 
 class NotificationService {
@@ -123,4 +140,58 @@ class NotificationService {
 
 void selectNotification(String? payload) async {
   //handle your logic here
+}
+
+
+
+void showLoader(context) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: const [
+          SpinKitRing(
+            color: Colors.deepOrangeAccent,
+            size: 100,
+          )
+        ],
+      );
+    },
+  );
+}
+
+
+
+void showErrorDialog(context, errorMessage) {
+  showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text("Ошибка"),
+        content: Text(errorMessage),
+        actions: [
+          ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(primary: Colors.red),
+              child: const Text("Ok"))
+        ],
+      ));
+}
+
+void showOKDialog(context, message) {
+  showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: Text("$message"),
+        actions: [
+          ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(primary: Colors.green),
+              child: const Text("Ok"))
+        ],
+      ));
 }

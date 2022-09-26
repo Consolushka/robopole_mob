@@ -31,7 +31,7 @@ void callbackDispatcher() {
       LocationInventory inv = LocationInventory.fromJson(jsonDecode(invetn));
       if (inv.PhotosNames!.isNotEmpty) {
         var request = http.MultipartRequest(
-            'POST', Uri.parse(APIUri.Inventory.SavePhotos));
+            'POST', Uri.parse(APIUri.Content.SavePhotos));
         request.headers.addAll({"Authorization": userToken});
         for (var image in inv.PhotosNames!) {
           request.files
@@ -47,7 +47,7 @@ void callbackDispatcher() {
 
       if (inv.AudioName != null && inv.AudioName != "") {
         var request = http.MultipartRequest(
-            'POST', Uri.parse(APIUri.Inventory.SaveAudio));
+            'POST', Uri.parse(APIUri.Content.SaveAudio));
         request.headers.addAll({"Authorization": userToken});
         request.files
             .add(await http.MultipartFile.fromPath('audio', inv.AudioName!));
@@ -89,9 +89,6 @@ class Inventory extends StatefulWidget {
 }
 
 class _InventoryState extends State<Inventory> {
-  late bool _locationServiceEnabled;
-  late PermissionStatus _locationPermissionGranted;
-
   final recorder = FlutterSoundRecorder();
   bool isRecorderReady = false;
 
@@ -172,23 +169,6 @@ class _InventoryState extends State<Inventory> {
         ));
       }
     }
-    // // Check if location service is enable
-    // _locationServiceEnabled = await location.serviceEnabled();
-    // if (!_locationServiceEnabled) {
-    //   _locationServiceEnabled = await location.requestService();
-    //   if (!_locationServiceEnabled) {
-    //     return const LatLng(54.86, 38.2);
-    //   }
-    // }
-    //
-    // // Check if permission is granted
-    // _locationPermissionGranted = await location.hasPermission();
-    // if (_locationPermissionGranted == PermissionStatus.denied) {
-    //   _locationPermissionGranted = await location.requestPermission();
-    //   if (_locationPermissionGranted != PermissionStatus.granted) {
-    //     return const LatLng(54.86, 38.2);
-    //   }
-    // }
 
     final _locationData = await location.getLocation();
     _userLocation = LatLng(_locationData.latitude!, _locationData.longitude!);
@@ -241,67 +221,11 @@ class _InventoryState extends State<Inventory> {
     );
   }
 
-  void showLoader() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: const [
-            SpinKitRing(
-              color: Colors.deepOrangeAccent,
-              size: 100,
-            )
-          ],
-        );
-      },
-    );
-  }
-
-  void showErrorDialog(errorMessage) {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) => AlertDialog(
-              title: const Text("Ошибка"),
-              content: Text(errorMessage),
-              actions: [
-                ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(primary: Colors.red),
-                    child: const Text("Ok"))
-              ],
-            ));
-  }
-
-  void showOKDialog() {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) => AlertDialog(
-              title: const Text("Инвентаризация проведена"),
-              actions: [
-                ElevatedButton(
-                    onPressed: () {
-                      selCulture = null;
-                      imagePaths = [];
-                      comment = "";
-                      audioPath = "";
-                      audioDuration = 0;
-                      Navigator.pop(context);
-                      setState(() {});
-                    },
-                    style: ElevatedButton.styleFrom(primary: Colors.green),
-                    child: const Text("Ok"))
-              ],
-            ));
-  }
-
   Future<void> PostInventory(inv) async {
-    showLoader();
+    showLoader(context);
     if (inv.PhotosNames.isNotEmpty) {
       var request =
-          http.MultipartRequest('POST', Uri.parse(APIUri.Inventory.SavePhotos));
+          http.MultipartRequest('POST', Uri.parse(APIUri.Content.SavePhotos));
       request.headers.addAll({"Authorization": user!.Token as String});
       for (var image in inv.PhotosNames) {
         request.files.add(await http.MultipartFile.fromPath('picture', image));
@@ -316,7 +240,7 @@ class _InventoryState extends State<Inventory> {
 
     if (inv.AudioName != null && inv.AudioName != "") {
       var request =
-          http.MultipartRequest('POST', Uri.parse(APIUri.Inventory.SaveAudio));
+          http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveAudio));
       request.headers.addAll({"Authorization": user!.Token as String});
       request.files
           .add(await http.MultipartFile.fromPath('audio', inv.AudioName));
@@ -337,11 +261,76 @@ class _InventoryState extends State<Inventory> {
     Navigator.pop(context);
 
     if (response.statusCode == 200) {
-      showOKDialog();
+      showOKDialog(context, "Инвентаризация проведена");
     } else {
       var error = Error.fromResponse(response);
       var errorMessage = "${error.Message} при обращаении к ${error.Path}";
-      showErrorDialog(errorMessage);
+      showErrorDialog(context, errorMessage);
+    }
+  }
+
+  Widget AudioDuration(){
+    if(audioPath=="" || audioPath==null){
+      return StreamBuilder<RecordingDisposition>(
+          stream: recorder.onProgress,
+          builder: (context, snapshot) {
+            if (audioDuration == 0) {
+              final duration = snapshot.hasData
+                  ? snapshot.data!.duration
+                  : Duration.zero;
+              audioDuration = duration.inSeconds;
+              return Text('${duration.inSeconds} c');
+            } else {
+              final duration = snapshot.hasData
+                  ? snapshot.data!.duration
+                  : Duration.zero;
+              if (audioDuration + 1 ==
+                  duration.inSeconds) {
+                audioDuration = duration.inSeconds;
+                return Text(
+                    '${duration.inSeconds} c');
+              } else {
+                return Text('$audioDuration c');
+              }
+            }
+          });
+    }
+    else{
+      return Text("Звуковой файл (${audioDuration}c)");
+    }
+  }
+
+  Widget RecorderButton(){
+    if(audioPath=="" || audioPath==null){
+      return SizedBox(
+        height: 60,
+        width: 60,
+        child: ElevatedButton(
+          onPressed: () async {
+            debugPrint("pressed");
+            if (recorder.isRecording) {
+              await stop();
+            } else {
+              await record();
+            }
+          },
+          child: Icon(
+            recorder.isRecording
+                ? Icons.stop
+                : Icons.mic,
+            size: 30,
+          ),
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius:
+              new BorderRadius.circular(60.0),
+            ),
+          ),
+        ),
+      );
+    }
+    else{
+      return Text("");
     }
   }
 
@@ -425,7 +414,27 @@ class _InventoryState extends State<Inventory> {
                       ListTile(
                           leading: Icon(Icons.info_outline),
                           title: Text('Обновить данные'),
-                          onTap: () async {}),
+                          onTap: () async {
+                            showLoader(context);
+                            await storage.delete(key: "selectedPartnerId");
+                            await storage.delete(key: "Partners");
+                            var availableFields = await http.get(
+                                Uri.parse(APIUri.Field.UpdateFields),
+                                headers: {
+                                  HttpHeaders.authorizationHeader: user!.Token as String,
+                                }
+                            );
+
+                            if(availableFields.statusCode != 200){
+                              var error = Error.fromResponse(availableFields);
+                              Navigator.pop(context);
+                              showErrorDialog(context, error);
+                            }
+
+                            await storage.write(key: "Fields", value: availableFields.body);
+                            Navigator.pop(context);
+                            setState(() {});
+                          }),
                     ],
                   ),
                 ),
@@ -525,77 +534,33 @@ class _InventoryState extends State<Inventory> {
                             const SizedBox(
                               height: 10,
                             ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                SizedBox(
-                                  height: 60,
-                                  width: 100,
-                                  child: ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.pushAndRemoveUntil(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    const CameraView()),
-                                            (route) => false);
-                                      },
-                                      child: const Icon(
-                                        Icons.camera_alt_outlined,
-                                        size: 40,
-                                      )),
-                                ),
-                                StreamBuilder<RecordingDisposition>(
-                                    stream: recorder.onProgress,
-                                    builder: (context, snapshot) {
-                                      if (audioDuration == 0) {
-                                        final duration = snapshot.hasData
-                                            ? snapshot.data!.duration
-                                            : Duration.zero;
-                                        audioDuration = duration.inSeconds;
-                                        return Text('${duration.inSeconds} c');
-                                      } else {
-                                        final duration = snapshot.hasData
-                                            ? snapshot.data!.duration
-                                            : Duration.zero;
-                                        if (audioDuration + 1 ==
-                                            duration.inSeconds) {
-                                          audioDuration = duration.inSeconds;
-                                          return Text(
-                                              '${duration.inSeconds} c');
-                                        } else {
-                                          return Text('$audioDuration c');
-                                        }
-                                      }
-                                    }),
-                                SizedBox(
-                                  height: 60,
-                                  width: 60,
-                                  child: ElevatedButton(
-                                    onPressed: () async {
-                                      debugPrint("pressed");
-                                      if (recorder.isRecording) {
-                                        await stop();
-                                      } else {
-                                        await record();
-                                      }
-                                    },
-                                    child: Icon(
-                                      recorder.isRecording
-                                          ? Icons.stop
-                                          : Icons.mic,
-                                      size: 30,
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            new BorderRadius.circular(60.0),
-                                      ),
-                                    ),
+                            Container(
+                              margin: EdgeInsets.only(right: 100),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  SizedBox(
+                                    height: 60,
+                                    width: 100,
+                                    child: ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.pushAndRemoveUntil(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      CameraView("inventory")),
+                                                  (route) => false);
+                                        },
+                                        child: const Icon(
+                                          Icons.camera_alt_outlined,
+                                          size: 40,
+                                        )),
                                   ),
-                                )
-                              ],
-                            )
+                                  AudioDuration(),
+                                  RecorderButton()
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       )
@@ -615,11 +580,11 @@ class _InventoryState extends State<Inventory> {
                         elevation: 2,
                         onPressed: () async {
                           if (selCulture == null) {
-                            showErrorDialog("Выберете культуру");
+                            showErrorDialog(context, "Выберете культуру");
                             return;
                           }
                           if (selPartner == null) {
-                            showErrorDialog("Выберете хозяйство");
+                            showErrorDialog(context, "Выберете хозяйство");
                             return;
                           }
                           Workmanager().cancelAll();
@@ -705,6 +670,7 @@ class _InventoryState extends State<Inventory> {
                       selPartner = null;
                       imagePaths = [];
                       audioDuration = 0;
+                      audioPath="";
                       comment = "";
                       setState(() {});
                     },
