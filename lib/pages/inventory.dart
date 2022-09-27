@@ -261,12 +261,20 @@ class _InventoryState extends State<Inventory> {
     Navigator.pop(context);
 
     if (response.statusCode == 200) {
-      showOKDialog(context, "Инвентаризация проведена");
+      showOKDialog(context, "Инвентаризация проведена", this.resetState);
     } else {
       var error = Error.fromResponse(response);
       var errorMessage = "${error.Message} при обращаении к ${error.Path}";
       showErrorDialog(context, errorMessage);
     }
+  }
+
+  void resetState(){
+    selCulture = null;
+    imagePaths = [];
+    audioDuration = 0;
+    comment = "";
+    setState((){});
   }
 
   Widget AudioDuration(){

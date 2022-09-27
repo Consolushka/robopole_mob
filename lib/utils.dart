@@ -180,7 +180,7 @@ void showErrorDialog(context, errorMessage) {
       ));
 }
 
-void showOKDialog(context, message) {
+void showOKDialog(context, message, setState) {
   showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
@@ -189,6 +189,7 @@ void showOKDialog(context, message) {
           ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
+                setState();
               },
               style: ElevatedButton.styleFrom(primary: Colors.green),
               child: const Text("Ok"))

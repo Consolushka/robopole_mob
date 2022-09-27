@@ -370,12 +370,19 @@ class _FieldInspectionState extends State<FieldInspection> {
     Navigator.pop(context);
 
     if (response.statusCode == 200) {
-      showOKDialog(context, "Осмотр поля проведен");
+      showOKDialog(context, "Осмотр поля проведен", this.resetState);
     } else {
       var error = Error.fromResponse(response);
       var errorMessage = "${error.Message} при обращаении к ${error.Path}";
       showErrorDialog(context, errorMessage);
     }
+  }
+
+  void resetState(){
+    imagePaths = [];
+    audioDuration = 0;
+    comment = "";
+    setState((){});
   }
 
   Future<LatLng> getUserLocation() async {
