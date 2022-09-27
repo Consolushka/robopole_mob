@@ -140,8 +140,13 @@ class _FieldInspectionState extends State<FieldInspection> {
 
   Future findField() async {
     var location = await getUserLocation();
-    var fieldsStorage = await storage.read(key: "Fields");
-    var fields = jsonDecode(fieldsStorage as String) as List;
+    var fields = List.empty();
+    try{
+      fields = await requestForFields();
+    }
+    catch(ex){
+      showErrorDialog(context, ex.toString());
+    }
     bool isFounded = false;
     for (int i = 0; i < fields.length; i++) {
       var field = fields[i];

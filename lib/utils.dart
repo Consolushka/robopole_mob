@@ -3,6 +3,13 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:convert';
+import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'dart:io';
+
+import 'classes.dart';
 
 
 String APIHost = "http://devapi.robopole.ru";
@@ -142,7 +149,43 @@ void selectNotification(String? payload) async {
   //handle your logic here
 }
 
+Future<List> getFieldsFromStorage() async {
+  final storage = const FlutterSecureStorage();
+  var fieldsStorage = await storage.read(key: "Fields");
+  var fields = jsonDecode(fieldsStorage as String) as List;
+  return fields;
+}
 
+Future<List> requestForFields() async {
+  final storage = const FlutterSecureStorage();
+  var user = User.fromJson(await storage.read(key: "User") as String);
+
+  var fieldsStorage = await storage.read(key: "Fields");
+  String fieldsJson = "";
+
+  if(fieldsStorage == null){
+    debugPrint("empty storage");
+    var availableFields = await http.get(
+        Uri.parse(APIUri.Field.AvailableFields),
+        headers: {
+          HttpHeaders.authorizationHeader: user.Token as String,
+        }
+    );
+
+    if(availableFields.statusCode != 200){
+      var error = Error.fromResponse(availableFields);
+      throw Exception(error);
+    }
+
+    fieldsJson = availableFields.body;
+    await storage.write(key: "Fields", value: fieldsJson);
+  }
+  else{
+    fieldsJson = fieldsStorage;
+  }
+
+  return jsonDecode(fieldsJson) as List;
+}
 
 void showLoader(context) {
   showDialog(

@@ -103,33 +103,12 @@ class MapSampleState extends State<MapSample> {
 
   Future loadFields() async{
     user = User.fromJson(await storage.read(key: "User") as String);
-
-    var fieldsStorage = await storage.read(key: "Fields");
-    String fieldsJson = "";
-
-    if(fieldsStorage == null){
-      debugPrint("empty storage");
-      var availableFields = await http.get(
-          Uri.parse(APIUri.Field.AvailableFields),
-          headers: {
-            HttpHeaders.authorizationHeader: user.Token as String,
-          }
-      );
-
-      if(availableFields.statusCode != 200){
-        var error = Error.fromResponse(availableFields);
-        showErrorDialog(context, error);
-      }
-
-      fieldsJson = availableFields.body;
-      await storage.write(key: "Fields", value: fieldsJson);
+    try{
+      fields = await requestForFields();
     }
-    else{
-      fieldsJson = fieldsStorage;
-      debugPrint("not empty storage");
+    catch(ex){
+      showErrorDialog(context, ex.toString());
     }
-
-    fields = jsonDecode(fieldsJson) as List;
   }
 
   Future<Set<Polygon>> createPolygons() async{
