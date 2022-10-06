@@ -64,6 +64,7 @@ class _ContentController{
   static String route = "$APIHost$APIVersion$ContentController";
   String SavePhotos = "$route/save-photos";
   String SaveAudio = "$route/save-audio";
+  String SaveVideos = "$route/save-videos";
 }
 
 class NotificationService {

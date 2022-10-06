@@ -15,9 +15,11 @@ import 'package:robopole_mob/pages/camera_preview.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart' as PH;
 import 'package:workmanager/workmanager.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 int audioDuration = 0;
 String comment = "";
+String? audioPath = null;
 NotificationService _notificationService = NotificationService();
 List<String> insps = [];
 
@@ -103,7 +105,7 @@ class _FieldInspectionState extends State<FieldInspection> {
   double lowest = 0.0;
   double leftest = 0.0;
 
-  String? audioPath = null;
+  Row? imagesRow = null;
 
   @override
   void initState() {
@@ -216,9 +218,6 @@ class _FieldInspectionState extends State<FieldInspection> {
         break;
       }
     }
-  }
-
-  Widget findImage() {
     List<Container> images = [];
     for (int i = 0; i < imagePaths.length; i++) {
       images.add(Container(
@@ -227,9 +226,34 @@ class _FieldInspectionState extends State<FieldInspection> {
         child: Image.file(File(imagePaths[i])),
       ));
     }
-    return Row(
+    for (int i = 0; i < videoPaths.length; i++) {
+      final thumbnailPath = await VideoThumbnail.thumbnailFile(
+          video: videoPaths[i],
+          imageFormat: ImageFormat.JPEG,
+          maxWidth: 75,
+      quality: 100);
+      images.add(Container(
+        width: 75,
+          height: 75,
+          child: Stack(
+            children: [
+              Image.file(File(thumbnailPath!)),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Icon(Icons.play_arrow, color: Colors.grey, size: 40,),
+              )
+            ],
+          )
+      ));
+    }
+
+    imagesRow = Row(
       children: images,
     );
+  }
+
+  Row findImage() {
+    return imagesRow!;
   }
 
   Widget AudioDuration() {
@@ -352,6 +376,21 @@ class _FieldInspectionState extends State<FieldInspection> {
       insp.PhotosNames = body;
     }
 
+
+    if (insp.VideoNames.isNotEmpty) {
+      var request =
+      http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveVideos));
+      request.headers.addAll({"Authorization": user!.Token as String});
+      for (var image in insp.VideoNames) {
+        request.files.add(await http.MultipartFile.fromPath('file', image));
+      }
+      var res = await request.send();
+      var responsed = await http.Response.fromStream(res);
+      final body =
+      (json.decode(responsed.body) as List<dynamic>).cast<String>();
+      insp.VideoNames = body;
+    }
+
     if (insp.AudioName != null && insp.AudioName != "") {
       var request =
           http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveAudio));
@@ -385,6 +424,7 @@ class _FieldInspectionState extends State<FieldInspection> {
 
   void resetState(){
     imagePaths = [];
+    videoPaths = [];
     audioDuration = 0;
     comment = "";
     setState((){});
@@ -534,14 +574,13 @@ class _FieldInspectionState extends State<FieldInspection> {
                                       height: 60,
                                       width: 100,
                                       child: ElevatedButton(
-                                          onPressed: () {
-                                            Navigator.pushAndRemoveUntil(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        CameraView(
-                                                            "fieldInspection")),
-                                                    (route) => false);
+                                          onPressed: () async {
+                                            await Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (context) => CameraView(
+                                                    "fieldInspection")
+                                              ),
+                                            );
                                           },
                                           child: const Icon(
                                             Icons.camera_alt_outlined,
@@ -581,7 +620,8 @@ class _FieldInspectionState extends State<FieldInspection> {
                                 currentField["id"],
                                 comment,
                                 imagePaths,
-                                audioPath);
+                                audioPath,
+                                videoPaths);
                             var encoded = jsonEncode(insp);
                             try {
                               await InternetAddress.lookup('example.com');
@@ -621,6 +661,7 @@ class _FieldInspectionState extends State<FieldInspection> {
                                   key: "isPostedInspectionsLengthIsNull",
                                   value: "0");
                               imagePaths = [];
+                              videoPaths = [];
                               audioDuration = 0;
                               comment = "";
                               setState(() {});
@@ -642,6 +683,7 @@ class _FieldInspectionState extends State<FieldInspection> {
                       heroTag: "clearData",
                       onPressed: () {
                         imagePaths = [];
+                        videoPaths = [];
                         audioDuration = 0;
                         comment = "";
                         audioPath = "";

@@ -5,10 +5,12 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:robopole_mob/pages/fieldInspection.dart';
 import 'package:robopole_mob/pages/inventory.dart';
-
-import '../main.dart';
+import 'package:video_player/video_player.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 List<String> imagePaths = [];
+List<String> videoPaths = [];
+
 
 class CameraView extends StatefulWidget {
   String page;
@@ -20,95 +22,216 @@ class CameraView extends StatefulWidget {
 }
 
 class _CameraViewState extends State<CameraView> {
-  late CameraController _controller;
-  late Future<void> _initializeControllerFuture;
+  bool isVideo = false;
+  bool _isLoading = true;
+  bool _isRecording = false;
+  CameraLensDirection direction = CameraLensDirection.back;
+  late CameraController _cameraController;
 
   @override
   void initState() {
     super.initState();
-    // To display the current output from the Camera,
-    // create a CameraController.
-    _controller = CameraController(
-      // Get a specific camera from the list of available cameras.
-      cameras[0],
-      // Define the resolution to use.
-      ResolutionPreset.medium,
-    );
-
-    // Next, initialize the controller. This returns a Future.
-    // imagePaths = [];
-    _initializeControllerFuture = _controller.initialize();
   }
 
   @override
   void dispose() {
-    // Dispose of the controller when the widget is disposed.
-    _controller.dispose();
+    _cameraController.dispose();
     super.dispose();
+  }
+
+  Future _initCamera() async {
+    final cameras = await availableCameras();
+    final front =
+        cameras.firstWhere((camera) => camera.lensDirection == direction);
+    _cameraController = CameraController(front, ResolutionPreset.max);
+    await _cameraController.initialize();
+    if (_isRecording) {
+      await _cameraController.prepareForVideoRecording();
+      await _cameraController.startVideoRecording();
+    }
+  }
+
+  _recordVideo() async {
+    if (_isRecording) {
+      final file = await _cameraController.stopVideoRecording();
+      setState(() => _isRecording = false);
+      final route = MaterialPageRoute(
+        builder: (_) => VideoPage(filePath: file.path, page: widget.page),
+      );
+      Navigator.push(context, route);
+    } else {
+      setState(() => _isRecording = true);
+    }
+  }
+
+  List<Widget> getButtons() {
+    if (isVideo) {
+      return [
+        Padding(
+          padding: EdgeInsets.only(bottom: 40, left: 10),
+          child: SizedBox(
+            height: 50,
+            width: 50,
+            child: FloatingActionButton(
+              heroTag: 'switch',
+              onPressed: () {
+                if (direction == CameraLensDirection.back) {
+                  direction = CameraLensDirection.front;
+                } else {
+                  direction = CameraLensDirection.back;
+                }
+                setState(() {});
+              },
+              backgroundColor: Colors.grey,
+              child: const Icon(
+                Icons.flip_camera_ios_outlined,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.only(bottom: 40),
+          child: SizedBox(
+            height: 100,
+            width: 100,
+            child: FloatingActionButton(
+              heroTag: 'video',
+              elevation: 0,
+              onPressed: () => _recordVideo(),
+              backgroundColor: Color.fromRGBO(24, 233, 111, 0),
+              child: Icon(
+                _isRecording ? Icons.stop : Icons.videocam,
+                size: 60,
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.only(bottom: 40, left: 10),
+          child: SizedBox(
+            height: 50,
+            width: 50,
+            child: FloatingActionButton(
+              heroTag: 'camera',
+              onPressed: () {
+                isVideo = false;
+                setState(() {});
+              },
+              backgroundColor: Colors.grey,
+              child: const Icon(
+                Icons.camera_alt_outlined,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+      ];
+    } else {
+      return [
+        Padding(
+          padding: EdgeInsets.only(bottom: 40, left: 10),
+          child: SizedBox(
+            height: 50,
+            width: 50,
+            child: FloatingActionButton(
+              heroTag: 'switch',
+              onPressed: () {
+                if (direction == CameraLensDirection.back) {
+                  direction = CameraLensDirection.front;
+                } else {
+                  direction = CameraLensDirection.back;
+                }
+                setState(() {});
+              },
+              backgroundColor: Colors.grey,
+              child: const Icon(
+                Icons.flip_camera_ios_outlined,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+        Padding(
+            padding: const EdgeInsets.only(bottom: 40),
+            child: SizedBox(
+              height: 100,
+              width: 100,
+              child: FloatingActionButton(
+                heroTag: 'camera',
+                onPressed: () async {
+                  // Take the Picture in a try / catch block. If anything goes wrong,
+                  // catch the error.
+                  final image = await _cameraController.takePicture();
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          DisplayPictureScreen(widget.page, image.path),
+                    ),
+                  );
+                },
+                backgroundColor: Color.fromRGBO(24, 233, 111, 0),
+                elevation: 0,
+                child: const Icon(Icons.photo_camera, size: 60),
+              ),
+            )),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 40, left: 10),
+          child: SizedBox(
+            height: 50,
+            width: 50,
+            child: FloatingActionButton(
+              heroTag: 'video',
+              onPressed: () {
+                isVideo = true;
+                setState(() {});
+              },
+              backgroundColor: Colors.grey,
+              child: const Icon(Icons.videocam_outlined, size: 20),
+            ),
+          ),
+        ),
+      ];
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Scaffold(
-          body: FutureBuilder<void>(
-            future: _initializeControllerFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done) {
-                // If the Future is complete, display the preview.
-                return CameraPreview(_controller);
-              } else {
-                // Otherwise, display a loading indicator.
-                return const Center(
-                    child: CircularProgressIndicator(
+    return FutureBuilder(
+      future: _initCamera(),
+      builder: (ctx, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return Center(
+            child: Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                CameraPreview(_cameraController),
+                ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.only(
+                      top: MediaQuery.of(context).size.height - 100,
+                      left: MediaQuery.of(context).size.width / 2 - 100),
+                  children: getButtons(),
+                )
+              ],
+            ),
+          );
+        } else {
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: const [
+                SpinKitRing(
                   color: Colors.deepOrangeAccent,
-                ));
-              }
-            },
-          ),
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 50),
-            child: SizedBox(
-              height: 80,
-              width: 80,
-              child: FloatingActionButton(
-                onPressed: () async {
-                  // Take the Picture in a try / catch block. If anything goes wrong,
-                  // catch the error.
-                  try {
-                    // Ensure that the camera is initialized.
-                    await _initializeControllerFuture;
-
-                    // Attempt to take a picture and get the file `image`
-                    // where it was saved.
-                    final image = await _controller.takePicture();
-                    // GallerySaver.saveImage(image.path);
-                    if (!mounted) return;
-
-                    // If the picture was taken, display it on a new screen.
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => DisplayPictureScreen(
-                          widget.page,
-                          image.path,
-                        ),
-                      ),
-                    );
-                  } catch (e) {
-                    // If an error occurs, log the error to the console.
-                  }
-                },
-                backgroundColor: Colors.deepOrangeAccent,
-                child: const Icon(Icons.camera_alt),
-              ),
-            )
-          ),
-        ),
-      ],
+                  size: 100,
+                )
+              ],
+            ),
+          );
+        }
+      },
     );
   }
 }
@@ -185,6 +308,125 @@ class DisplayPictureScreen extends StatelessWidget {
                           MaterialPageRoute(
                               builder: (context) => const FieldInspection()),
                           (route) => false);
+                    }
+                  }
+                },
+                backgroundColor: Colors.green,
+                child: Icon(Icons.check),
+              ),
+            ))
+      ],
+    );
+  }
+}
+
+class VideoPage extends StatefulWidget {
+  final String filePath;
+  final String page;
+
+  const VideoPage({Key? key, required this.filePath, required this.page}) : super(key: key);
+
+  @override
+  _VideoPageState createState() => _VideoPageState();
+}
+
+class _VideoPageState extends State<VideoPage> {
+  late VideoPlayerController _videoPlayerController;
+
+  @override
+  void dispose() {
+    _videoPlayerController.dispose();
+    super.dispose();
+  }
+
+  Future _initVideoPlayer() async {
+    _videoPlayerController = VideoPlayerController.file(File(widget.filePath));
+    await _videoPlayerController.initialize();
+    await _videoPlayerController.setLooping(false);
+    await _videoPlayerController.play();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
+            title: Text("Проверьте видеозапись"),
+            backgroundColor: Colors.deepOrangeAccent,
+          ),
+          body: FutureBuilder(
+            future: _initVideoPlayer(),
+            builder: (context, state) {
+              if (state.connectionState == ConnectionState.waiting) {
+                return Scaffold(
+                  backgroundColor: Colors.white,
+                  body: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: const [
+                      SpinKitRing(
+                        color: Colors.deepOrangeAccent,
+                        size: 100,
+                      )
+                    ],
+                  ),
+                );
+              } else {
+                return VideoPlayer(_videoPlayerController);
+              }
+            },
+          ),
+        ),
+        Align(
+            alignment: Alignment.bottomLeft,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 30, left: 15),
+              child: FloatingActionButton(
+                heroTag: "close",
+                onPressed: () {
+                  if (widget.page == "inventory") {
+                    Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const Inventory()),
+                            (route) => false);
+                  } else {
+                    if (widget.page == "fieldInspection") {
+                      Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const FieldInspection()),
+                              (route) => false);
+                    }
+                  }
+                },
+                backgroundColor: Colors.redAccent,
+                child: Icon(Icons.close),
+              ),
+            )),
+        Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 30, right: 15),
+              child: FloatingActionButton(
+                heroTag: "fine",
+                onPressed: () {
+                  videoPaths.add(widget.filePath);
+                  debugPrint('$videoPaths');
+                  if (widget.page == "inventory") {
+                    Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const Inventory()),
+                            (route) => false);
+                  } else {
+                    if (widget.page == "fieldInspection") {
+                      Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const FieldInspection()),
+                              (route) => false);
                     }
                   }
                 },

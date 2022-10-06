@@ -142,11 +142,12 @@ class Inspection {
   int? FieldID;
   String? Comment;
   List<String>? PhotosNames;
+  List<String>? VideoNames;
   String? AudioName;
   DateTime? Date;
 
   Inspection(this.ID, this.Lat, this.Lng, this.FieldID,
-      this.Comment, this.PhotosNames, this.AudioName){
+      this.Comment, this.PhotosNames, this.AudioName, this.VideoNames){
     Date = DateTime.now();
   }
 
@@ -160,6 +161,7 @@ class Inspection {
       "comment": Comment,
       "photosNames": PhotosNames,
       "audioName": AudioName,
+      "videoNames": VideoNames,
       "date": encDate
     };
   }
@@ -172,6 +174,7 @@ class Inspection {
     Comment = json["comment"];
     // List<String> lst = List<String>.filled(1, "");
     PhotosNames = json["photosNames"].cast<String>();
+    VideoNames = json["videoNames"].cast<String>();
     AudioName = json["audioName"];
     Date = DateTime.parse(json["date"]);
   }

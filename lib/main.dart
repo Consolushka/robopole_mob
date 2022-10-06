@@ -42,7 +42,8 @@ class Authed extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'GoogleMaps',
+      title: 'Робополе',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'Roboto'),
       home: const FunctionalPage(),
     );
@@ -55,7 +56,8 @@ class NoAuthed extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'GoogleMaps',
+      title: 'Робополе',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'Roboto'),
       home: const Auth(),
     );
