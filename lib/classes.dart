@@ -51,11 +51,17 @@ class Error {
   String? Path;
 
   Error.fromResponse(response){
-    Map parsed = jsonDecode(utf8.decode(response.bodyBytes));
+    try{
+      Map parsed = jsonDecode(utf8.decode(response.bodyBytes));
+      StatusCode = parsed["StatusCode"];
+      Message = parsed["Message"];
+      Path = parsed["Path"];
+    }
+    catch(e){
+      Path = response.request!.url.path;
 
-    StatusCode = parsed["StatusCode"];
-    Message = parsed["Message"];
-    Path = parsed["Path"];
+      Message = response.reasonPhrase;
+    }
   }
 }
 
@@ -98,11 +104,12 @@ class LocationInventory {
   int? PartnerID;
   String? Comment;
   List<String>? PhotosNames;
+  List<String>? VideoNames;
   String? AudioName;
   DateTime? Date;
 
   LocationInventory(this.ID, this.Lat, this.Lng, this.AgroCultureID, this.PartnerID,
-      this.Comment, this.PhotosNames, this.AudioName){
+      this.Comment, this.PhotosNames, this.AudioName, this.VideoNames){
     Date = DateTime.now();
   }
 
@@ -116,6 +123,7 @@ class LocationInventory {
       "partnerID": PartnerID,
       "comment": Comment,
       "photosNames": PhotosNames,
+      "videoNames": VideoNames,
       "audioName": AudioName,
       "date": encDate
     };
@@ -130,6 +138,7 @@ class LocationInventory {
     Comment = json["comment"];
     // List<String> lst = List<String>.filled(1, "");
     PhotosNames = json["photosNames"].cast<String>();
+    VideoNames = json["videoNames"].cast<String>();
     AudioName = json["audioName"];
     Date = DateTime.parse(json["date"]);
   }

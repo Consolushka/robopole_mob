@@ -371,6 +371,11 @@ class _FieldInspectionState extends State<FieldInspection> {
 
       var res = await request.send();
       var responsed = await http.Response.fromStream(res);
+      if(responsed.statusCode!=200){
+        Navigator.pop(context);
+        showErrorDialog(context, responsed.reasonPhrase);
+        return;
+      }
       final body =
           (json.decode(responsed.body) as List<dynamic>).cast<String>();
       insp.PhotosNames = body;
@@ -386,6 +391,11 @@ class _FieldInspectionState extends State<FieldInspection> {
       }
       var res = await request.send();
       var responsed = await http.Response.fromStream(res);
+      if(responsed.statusCode!=200){
+        Navigator.pop(context);
+        showErrorDialog(context, responsed.reasonPhrase);
+        return;
+      }
       final body =
       (json.decode(responsed.body) as List<dynamic>).cast<String>();
       insp.VideoNames = body;
@@ -400,6 +410,11 @@ class _FieldInspectionState extends State<FieldInspection> {
 
       var res = await request.send();
       var responsed = await http.Response.fromStream(res);
+      if(responsed.statusCode!=200){
+        Navigator.pop(context);
+        showErrorDialog(context, responsed.reasonPhrase);
+        return;
+      }
       final body = responsed.body;
       insp.AudioName = body;
     }
@@ -663,6 +678,7 @@ class _FieldInspectionState extends State<FieldInspection> {
                               imagePaths = [];
                               videoPaths = [];
                               audioDuration = 0;
+                              audioPath = "";
                               comment = "";
                               setState(() {});
                             }

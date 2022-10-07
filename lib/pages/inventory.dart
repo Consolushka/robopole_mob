@@ -15,10 +15,12 @@ import 'package:robopole_mob/pages/auth.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart' as PH;
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 String? selCulture = null;
 String? selPartner = null;
 int audioDuration = 0;
+String? audioPath = null;
 String comment = "";
 NotificationService _notificationService = NotificationService();
 List<String> invs = [];
@@ -30,8 +32,8 @@ void callbackDispatcher() {
     for (String invetn in inentory) {
       LocationInventory inv = LocationInventory.fromJson(jsonDecode(invetn));
       if (inv.PhotosNames!.isNotEmpty) {
-        var request = http.MultipartRequest(
-            'POST', Uri.parse(APIUri.Content.SavePhotos));
+        var request =
+            http.MultipartRequest('POST', Uri.parse(APIUri.Content.SavePhotos));
         request.headers.addAll({"Authorization": userToken});
         for (var image in inv.PhotosNames!) {
           request.files
@@ -46,8 +48,8 @@ void callbackDispatcher() {
       }
 
       if (inv.AudioName != null && inv.AudioName != "") {
-        var request = http.MultipartRequest(
-            'POST', Uri.parse(APIUri.Content.SaveAudio));
+        var request =
+            http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveAudio));
         request.headers.addAll({"Authorization": userToken});
         request.files
             .add(await http.MultipartFile.fromPath('audio', inv.AudioName!));
@@ -94,10 +96,8 @@ class _InventoryState extends State<Inventory> {
 
   User? user;
 
-  List<AgroCulture> availableCultures = [];
-
   String? selectedValue = null;
-  String? audioPath = null;
+  Row? imagesRow = null;
 
   List<DropdownMenuItem<String>> culturesItems = [];
   List<DropdownMenuItem<String>> partnersItems = [];
@@ -117,7 +117,7 @@ class _InventoryState extends State<Inventory> {
 
   Future initRecorder() async {
     var check = await PH.Permission.microphone.status;
-    if(check.isDenied){
+    if (check.isDenied) {
       final status = await PH.Permission.microphone.request();
       debugPrint(status.toString());
       if (status != PH.PermissionStatus.granted) {
@@ -125,21 +125,6 @@ class _InventoryState extends State<Inventory> {
       }
     }
 
-    await recorder.openRecorder();
-    isRecorderReady = true;
-
-    recorder.setSubscriptionDuration(const Duration(milliseconds: 1000));
-  }
-
-  @override
-  void dispose() {
-    recorder.closeRecorder();
-
-    super.dispose();
-  }
-
-  Future<LatLng> getUserLocation() async {
-    Location location = Location();
     var culturesStored = await storage.read(key: "Cultures");
     String culturesJson = "";
     user = User.fromJson(await storage.read(key: "User") as String);
@@ -154,7 +139,7 @@ class _InventoryState extends State<Inventory> {
       culturesJson = culturesStored;
     }
 
-    availableCultures = [];
+    List<AgroCulture> availableCultures = [];
     (jsonDecode(culturesJson) as List).forEach((element) {
       availableCultures.add(AgroCulture.fromMap(element));
     });
@@ -170,16 +155,8 @@ class _InventoryState extends State<Inventory> {
       }
     }
 
-    final _locationData = await location.getLocation();
-    _userLocation = LatLng(_locationData.latitude!, _locationData.longitude!);
-
-    if (partnersItems.length != 0) {
-      return LatLng(_locationData.latitude!, _locationData.longitude!);
-    }
-
     var partnersStorage = await storage.read(key: "Partners");
     String partnersJson = "";
-    user = User.fromJson(await storage.read(key: "User") as String);
 
     if (partnersStorage == null) {
       var part =
@@ -204,6 +181,64 @@ class _InventoryState extends State<Inventory> {
         value: "${partner["id"]}",
       ));
     }
+
+    await recorder.openRecorder();
+    isRecorderReady = true;
+
+    recorder.setSubscriptionDuration(const Duration(milliseconds: 1000));
+  }
+
+  @override
+  void dispose() {
+    recorder.closeRecorder();
+
+    super.dispose();
+  }
+
+  Future<LatLng> getUserLocation() async {
+    if (user == null) {
+      user = User.fromJson(await storage.read(key: "User") as String);
+    }
+    Location location = Location();
+
+    final _locationData = await location.getLocation();
+    _userLocation = LatLng(_locationData.latitude!, _locationData.longitude!);
+
+    List<Container> images = [];
+    for (int i = 0; i < imagePaths.length; i++) {
+      images.add(Container(
+        height: 75,
+        width: 75,
+        child: Image.file(File(imagePaths[i])),
+      ));
+    }
+    for (int i = 0; i < videoPaths.length; i++) {
+      final thumbnailPath = await VideoThumbnail.thumbnailFile(
+          video: videoPaths[i],
+          imageFormat: ImageFormat.JPEG,
+          maxWidth: 75,
+          quality: 100);
+      images.add(Container(
+          width: 75,
+          height: 75,
+          child: Stack(
+            children: [
+              Image.file(File(thumbnailPath!)),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Icon(
+                  Icons.play_arrow,
+                  color: Colors.grey,
+                  size: 40,
+                ),
+              )
+            ],
+          )));
+    }
+
+    imagesRow = Row(
+      children: images,
+    );
     return LatLng(_locationData.latitude!, _locationData.longitude!);
   }
 
@@ -233,9 +268,33 @@ class _InventoryState extends State<Inventory> {
 
       var res = await request.send();
       var responsed = await http.Response.fromStream(res);
+      if (responsed.statusCode != 200) {
+        Navigator.pop(context);
+        showErrorDialog(context, responsed.reasonPhrase);
+        return;
+      }
       final body =
           (json.decode(responsed.body) as List<dynamic>).cast<String>();
       inv.PhotosNames = body;
+    }
+
+    if (inv.VideoNames.isNotEmpty) {
+      var request =
+          http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveVideos));
+      request.headers.addAll({"Authorization": user!.Token as String});
+      for (var image in inv.VideoNames) {
+        request.files.add(await http.MultipartFile.fromPath('file', image));
+      }
+      var res = await request.send();
+      var responsed = await http.Response.fromStream(res);
+      if (responsed.statusCode != 200) {
+        Navigator.pop(context);
+        showErrorDialog(context, responsed.reasonPhrase);
+        return;
+      }
+      final body =
+          (json.decode(responsed.body) as List<dynamic>).cast<String>();
+      inv.VideoNames = body;
     }
 
     if (inv.AudioName != null && inv.AudioName != "") {
@@ -247,6 +306,12 @@ class _InventoryState extends State<Inventory> {
 
       var res = await request.send();
       var responsed = await http.Response.fromStream(res);
+
+      if (responsed.statusCode != 200) {
+        Navigator.pop(context);
+        showErrorDialog(context, responsed.reasonPhrase);
+        return;
+      }
       final body = responsed.body;
       inv.AudioName = body;
     }
@@ -269,47 +334,44 @@ class _InventoryState extends State<Inventory> {
     }
   }
 
-  void resetState(){
+  void resetState() {
     selCulture = null;
     imagePaths = [];
+    videoPaths = [];
     audioDuration = 0;
+    audioPath = "";
     comment = "";
-    setState((){});
+    setState(() {});
   }
 
-  Widget AudioDuration(){
-    if(audioPath=="" || audioPath==null){
+  Widget AudioDuration() {
+    if (audioPath == "" || audioPath == null) {
       return StreamBuilder<RecordingDisposition>(
           stream: recorder.onProgress,
           builder: (context, snapshot) {
             if (audioDuration == 0) {
-              final duration = snapshot.hasData
-                  ? snapshot.data!.duration
-                  : Duration.zero;
+              final duration =
+                  snapshot.hasData ? snapshot.data!.duration : Duration.zero;
               audioDuration = duration.inSeconds;
               return Text('${duration.inSeconds} c');
             } else {
-              final duration = snapshot.hasData
-                  ? snapshot.data!.duration
-                  : Duration.zero;
-              if (audioDuration + 1 ==
-                  duration.inSeconds) {
+              final duration =
+                  snapshot.hasData ? snapshot.data!.duration : Duration.zero;
+              if (audioDuration + 1 == duration.inSeconds) {
                 audioDuration = duration.inSeconds;
-                return Text(
-                    '${duration.inSeconds} c');
+                return Text('${duration.inSeconds} c');
               } else {
                 return Text('$audioDuration c');
               }
             }
           });
-    }
-    else{
+    } else {
       return Text("Звуковой файл (${audioDuration}c)");
     }
   }
 
-  Widget RecorderButton(){
-    if(audioPath=="" || audioPath==null){
+  Widget RecorderButton() {
+    if (audioPath == "" || audioPath == null) {
       return SizedBox(
         height: 60,
         width: 60,
@@ -323,21 +385,17 @@ class _InventoryState extends State<Inventory> {
             }
           },
           child: Icon(
-            recorder.isRecording
-                ? Icons.stop
-                : Icons.mic,
+            recorder.isRecording ? Icons.stop : Icons.mic,
             size: 30,
           ),
           style: ElevatedButton.styleFrom(
             shape: RoundedRectangleBorder(
-              borderRadius:
-              new BorderRadius.circular(60.0),
+              borderRadius: new BorderRadius.circular(60.0),
             ),
           ),
         ),
       );
-    }
-    else{
+    } else {
       return Text("");
     }
   }
@@ -429,17 +487,18 @@ class _InventoryState extends State<Inventory> {
                             var availableFields = await http.get(
                                 Uri.parse(APIUri.Field.UpdateFields),
                                 headers: {
-                                  HttpHeaders.authorizationHeader: user!.Token as String,
-                                }
-                            );
+                                  HttpHeaders.authorizationHeader:
+                                      user!.Token as String,
+                                });
 
-                            if(availableFields.statusCode != 200){
+                            if (availableFields.statusCode != 200) {
                               var error = Error.fromResponse(availableFields);
                               Navigator.pop(context);
                               showErrorDialog(context, error);
                             }
 
-                            await storage.write(key: "Fields", value: availableFields.body);
+                            await storage.write(
+                                key: "Fields", value: availableFields.body);
                             Navigator.pop(context);
                             setState(() {});
                           }),
@@ -483,8 +542,9 @@ class _InventoryState extends State<Inventory> {
                                 value: selPartner,
                                 items: partnersItems,
                                 onChanged: (String? value) {
-                                  selPartner = value;
-                                  setState(() {});
+                                  setState(() {
+                                    selPartner = value;
+                                  });
                                 },
                               ),
                             ),
@@ -508,8 +568,9 @@ class _InventoryState extends State<Inventory> {
                                 value: selCulture,
                                 items: culturesItems,
                                 onChanged: (String? value) {
-                                  selCulture = value;
-                                  setState(() {});
+                                  setState(() {
+                                    selCulture = value;
+                                  });
                                 },
                               ),
                             ),
@@ -538,14 +599,15 @@ class _InventoryState extends State<Inventory> {
                             const SizedBox(
                               height: 15,
                             ),
-                            findImage(),
+                            imagesRow!,
                             const SizedBox(
                               height: 10,
                             ),
                             Container(
                               margin: EdgeInsets.only(right: 100),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   SizedBox(
                                     height: 60,
@@ -557,7 +619,7 @@ class _InventoryState extends State<Inventory> {
                                               MaterialPageRoute(
                                                   builder: (context) =>
                                                       CameraView("inventory")),
-                                                  (route) => false);
+                                              (route) => false);
                                         },
                                         child: const Icon(
                                           Icons.camera_alt_outlined,
@@ -606,11 +668,13 @@ class _InventoryState extends State<Inventory> {
                               int.parse(selPartner!),
                               comment,
                               imagePaths,
-                              audioPath);
+                              audioPath,
+                              videoPaths);
                           var encoded = jsonEncode(inv);
                           try {
                             await InternetAddress.lookup('example.com');
                             invs = [];
+
                             await PostInventory(inv);
                           } on SocketException catch (_) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -653,7 +717,9 @@ class _InventoryState extends State<Inventory> {
                                 value: "0");
                             selCulture = null;
                             imagePaths = [];
+                            videoPaths = [];
                             audioDuration = 0;
+                            audioPath = "";
                             comment = "";
                             // Navigator.pop(context);
                             setState(() {});
@@ -677,8 +743,9 @@ class _InventoryState extends State<Inventory> {
                       selCulture = null;
                       selPartner = null;
                       imagePaths = [];
+                      videoPaths = [];
                       audioDuration = 0;
-                      audioPath="";
+                      audioPath = "";
                       comment = "";
                       setState(() {});
                     },
