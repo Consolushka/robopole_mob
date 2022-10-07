@@ -47,6 +47,26 @@ void callbackDispatcher() {
         inv.PhotosNames = body;
       }
 
+      if (inv.VideoNames!.isNotEmpty) {
+        var request =
+        http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveVideos));
+        request.headers.addAll({"Authorization": userToken});
+        for (var image in inv.VideoNames!) {
+          request.files.add(await http.MultipartFile.fromPath('file', image));
+        }
+        var res = await request.send();
+        var responsed = await http.Response.fromStream(res);
+        if (responsed.statusCode != 200) {
+          var error = Error.fromResponse(responsed);
+          await _notificationService.showNotifications(
+              "Ошибка при проведении инвентаризации. ${error.Message}");
+          return Future.value(false);
+        }
+        final body =
+        (json.decode(responsed.body) as List<dynamic>).cast<String>();
+        inv.VideoNames = body;
+      }
+
       if (inv.AudioName != null && inv.AudioName != "") {
         var request =
             http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveAudio));

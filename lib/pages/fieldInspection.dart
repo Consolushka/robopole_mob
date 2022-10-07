@@ -40,9 +40,35 @@ void callbackDispatcher() {
 
         var res = await request.send();
         var responsed = await http.Response.fromStream(res);
+        if(responsed.statusCode!=200){
+          var error = Error.fromResponse(responsed);
+          await _notificationService.showNotifications(
+              "Ошибка при осмотре поля. ${error.Message}");
+          return Future.value(false);
+        }
         final body =
             (json.decode(responsed.body) as List<dynamic>).cast<String>();
         insp.PhotosNames = body;
+      }
+
+      if (insp.VideoNames!.isNotEmpty) {
+        var request =
+        http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveVideos));
+        request.headers.addAll({"Authorization": userToken});
+        for (var image in insp.VideoNames!) {
+          request.files.add(await http.MultipartFile.fromPath('file', image));
+        }
+        var res = await request.send();
+        var responsed = await http.Response.fromStream(res);
+        if(responsed.statusCode!=200){
+          var error = Error.fromResponse(responsed);
+          await _notificationService.showNotifications(
+              "Ошибка при осмотре поля. ${error.Message}");
+          return Future.value(false);
+        }
+        final body =
+        (json.decode(responsed.body) as List<dynamic>).cast<String>();
+        insp.VideoNames = body;
       }
 
       if (insp.AudioName != null && insp.AudioName != "") {
@@ -54,6 +80,12 @@ void callbackDispatcher() {
 
         var res = await request.send();
         var responsed = await http.Response.fromStream(res);
+        if(responsed.statusCode!=200){
+          var error = Error.fromResponse(responsed);
+          await _notificationService.showNotifications(
+              "Ошибка при осмотре поля. ${error.Message}");
+          return Future.value(false);
+        }
         final body = responsed.body;
         insp.AudioName = body;
       }
