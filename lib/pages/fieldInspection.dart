@@ -525,6 +525,95 @@ class _FieldInspectionState extends State<FieldInspection> {
                     title: Text("Осмотр поля ${currentField["id"]}"),
                     backgroundColor: Colors.deepOrangeAccent,
                   ),
+                  bottomNavigationBar: BottomAppBar(
+                    color: Colors.white,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            imagePaths = [];
+                            videoPaths = [];
+                            audioDuration = 0;
+                            comment = "";
+                            audioPath = "";
+                            setState(() {});
+                          },
+                            child: Icon(Icons.delete, size: 35,),
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.all(10),
+                              primary: Colors.redAccent,
+                              shape: CircleBorder()),
+                        ),
+                        ElevatedButton(
+                          onPressed: () async {
+                            Workmanager().cancelAll();
+                            Location location = Location();
+                            final _locationData = await location.getLocation();
+                            Inspection insp = Inspection(
+                                0,
+                                _locationData.latitude!,
+                                _locationData.longitude!,
+                                currentField["id"],
+                                comment,
+                                imagePaths,
+                                audioPath,
+                                videoPaths);
+                            var encoded = jsonEncode(insp);
+                            try {
+                              await InternetAddress.lookup('example.com');
+                              insps = [];
+                              await PostInspection(insp);
+                            } on SocketException catch (_) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  margin: EdgeInsets.only(right: 100, left: 80),
+                                  content: const Text(
+                                    'Осмотр поля проведется при подключении к интернету',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                  backgroundColor: Colors.redAccent,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                              if (await storage.read(
+                                  key: "isPostedInspectionsLengthIsNull") ==
+                                  "1") {
+                                insps = [];
+                              }
+                              insps.add(encoded);
+                              var e = jsonEncode(insps);
+                              var encodedInventories = Map();
+                              encodedInventories["invs"] = e;
+                              Workmanager().registerOneOffTask(
+                                  "${DateTime.now()}", "${DateTime.now()}",
+                                  existingWorkPolicy: ExistingWorkPolicy.append,
+                                  constraints: Constraints(
+                                      networkType: NetworkType.connected),
+                                  inputData: {
+                                    "Inspections": e,
+                                    "UserToken": user!.Token
+                                  });
+                              await storage.write(
+                                  key: "isPostedInspectionsLengthIsNull",
+                                  value: "0");
+                              imagePaths = [];
+                              videoPaths = [];
+                              audioDuration = 0;
+                              audioPath = "";
+                              comment = "";
+                              setState(() {});
+                            }
+                          },
+                          child: Icon(Icons.check, size: 50,),
+                          style: ElevatedButton.styleFrom(
+                              primary: Colors.green,
+                              padding: EdgeInsets.all(20),
+                              shape: CircleBorder()),
+                        ),
+                      ],
+                    ),
+                  ),
                   drawer: Drawer(
                     child: ListView(
                       padding: EdgeInsets.zero,
@@ -646,102 +735,102 @@ class _FieldInspectionState extends State<FieldInspection> {
                     ),
                   ),
                 ),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Padding(
-                      padding: const EdgeInsets.only(bottom: 10, right: 15),
-                      child: SizedBox(
-                        width: 80,
-                        height: 80,
-                        child: FloatingActionButton(
-                          heroTag: "confirm",
-                          elevation: 2,
-                          onPressed: () async {
-                            Workmanager().cancelAll();
-                            Location location = Location();
-                            final _locationData = await location.getLocation();
-                            Inspection insp = Inspection(
-                                0,
-                                _locationData.latitude!,
-                                _locationData.longitude!,
-                                currentField["id"],
-                                comment,
-                                imagePaths,
-                                audioPath,
-                                videoPaths);
-                            var encoded = jsonEncode(insp);
-                            try {
-                              await InternetAddress.lookup('example.com');
-                              insps = [];
-                              await PostInspection(insp);
-                            } on SocketException catch (_) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  margin: EdgeInsets.only(right: 100, left: 80),
-                                  content: const Text(
-                                    'Осмотр поля проведется при подключении к интернету',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
-                                  backgroundColor: Colors.redAccent,
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                              if (await storage.read(
-                                  key: "isPostedInspectionsLengthIsNull") ==
-                                  "1") {
-                                insps = [];
-                              }
-                              insps.add(encoded);
-                              var e = jsonEncode(insps);
-                              var encodedInventories = Map();
-                              encodedInventories["invs"] = e;
-                              Workmanager().registerOneOffTask(
-                                  "${DateTime.now()}", "${DateTime.now()}",
-                                  existingWorkPolicy: ExistingWorkPolicy.append,
-                                  constraints: Constraints(
-                                      networkType: NetworkType.connected),
-                                  inputData: {
-                                    "Inspections": e,
-                                    "UserToken": user!.Token
-                                  });
-                              await storage.write(
-                                  key: "isPostedInspectionsLengthIsNull",
-                                  value: "0");
-                              imagePaths = [];
-                              videoPaths = [];
-                              audioDuration = 0;
-                              audioPath = "";
-                              comment = "";
-                              setState(() {});
-                            }
-                          },
-                          backgroundColor: Colors.green,
-                          child: const Icon(
-                            Icons.check,
-                            size: 40,
-                          ),
-                        ),
-                      )),
-                ),
-                Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 10, left: 15),
-                    child: FloatingActionButton(
-                      heroTag: "clearData",
-                      onPressed: () {
-                        imagePaths = [];
-                        videoPaths = [];
-                        audioDuration = 0;
-                        comment = "";
-                        audioPath = "";
-                        setState(() {});
-                      },
-                      backgroundColor: Colors.redAccent,
-                      child: const Icon(Icons.delete),
-                    ),
-                  ),
-                ),
+                // Align(
+                //   alignment: Alignment.bottomRight,
+                //   child: Padding(
+                //       padding: const EdgeInsets.only(bottom: 10, right: 15),
+                //       child: SizedBox(
+                //         width: 80,
+                //         height: 80,
+                //         child: FloatingActionButton(
+                //           heroTag: "confirm",
+                //           elevation: 2,
+                //           onPressed: () async {
+                //             Workmanager().cancelAll();
+                //             Location location = Location();
+                //             final _locationData = await location.getLocation();
+                //             Inspection insp = Inspection(
+                //                 0,
+                //                 _locationData.latitude!,
+                //                 _locationData.longitude!,
+                //                 currentField["id"],
+                //                 comment,
+                //                 imagePaths,
+                //                 audioPath,
+                //                 videoPaths);
+                //             var encoded = jsonEncode(insp);
+                //             try {
+                //               await InternetAddress.lookup('example.com');
+                //               insps = [];
+                //               await PostInspection(insp);
+                //             } on SocketException catch (_) {
+                //               ScaffoldMessenger.of(context).showSnackBar(
+                //                 SnackBar(
+                //                   margin: EdgeInsets.only(right: 100, left: 80),
+                //                   content: const Text(
+                //                     'Осмотр поля проведется при подключении к интернету',
+                //                     style: TextStyle(fontSize: 12),
+                //                   ),
+                //                   backgroundColor: Colors.redAccent,
+                //                   behavior: SnackBarBehavior.floating,
+                //                 ),
+                //               );
+                //               if (await storage.read(
+                //                   key: "isPostedInspectionsLengthIsNull") ==
+                //                   "1") {
+                //                 insps = [];
+                //               }
+                //               insps.add(encoded);
+                //               var e = jsonEncode(insps);
+                //               var encodedInventories = Map();
+                //               encodedInventories["invs"] = e;
+                //               Workmanager().registerOneOffTask(
+                //                   "${DateTime.now()}", "${DateTime.now()}",
+                //                   existingWorkPolicy: ExistingWorkPolicy.append,
+                //                   constraints: Constraints(
+                //                       networkType: NetworkType.connected),
+                //                   inputData: {
+                //                     "Inspections": e,
+                //                     "UserToken": user!.Token
+                //                   });
+                //               await storage.write(
+                //                   key: "isPostedInspectionsLengthIsNull",
+                //                   value: "0");
+                //               imagePaths = [];
+                //               videoPaths = [];
+                //               audioDuration = 0;
+                //               audioPath = "";
+                //               comment = "";
+                //               setState(() {});
+                //             }
+                //           },
+                //           backgroundColor: Colors.green,
+                //           child: const Icon(
+                //             Icons.check,
+                //             size: 40,
+                //           ),
+                //         ),
+                //       )),
+                // ),
+                // Align(
+                //   alignment: Alignment.bottomLeft,
+                //   child: Padding(
+                //     padding: const EdgeInsets.only(bottom: 10, left: 15),
+                //     child: FloatingActionButton(
+                //       heroTag: "clearData",
+                //       onPressed: () {
+                //         imagePaths = [];
+                //         videoPaths = [];
+                //         audioDuration = 0;
+                //         comment = "";
+                //         audioPath = "";
+                //         setState(() {});
+                //       },
+                //       backgroundColor: Colors.redAccent,
+                //       child: const Icon(Icons.delete),
+                //     ),
+                //   ),
+                // ),
               ],
             );
           }

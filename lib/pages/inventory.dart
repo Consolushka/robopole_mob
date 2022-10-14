@@ -49,7 +49,7 @@ void callbackDispatcher() {
 
       if (inv.VideoNames!.isNotEmpty) {
         var request =
-        http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveVideos));
+            http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveVideos));
         request.headers.addAll({"Authorization": userToken});
         for (var image in inv.VideoNames!) {
           request.files.add(await http.MultipartFile.fromPath('file', image));
@@ -63,7 +63,7 @@ void callbackDispatcher() {
           return Future.value(false);
         }
         final body =
-        (json.decode(responsed.body) as List<dynamic>).cast<String>();
+            (json.decode(responsed.body) as List<dynamic>).cast<String>();
         inv.VideoNames = body;
       }
 
@@ -453,6 +453,121 @@ class _InventoryState extends State<Inventory> {
                   title: const Text("Инвентаризация"),
                   backgroundColor: Colors.deepOrangeAccent,
                 ),
+                bottomNavigationBar: BottomAppBar(
+                  color: Colors.white,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          selCulture = null;
+                          selPartner = null;
+                          imagePaths = [];
+                          videoPaths = [];
+                          audioDuration = 0;
+                          audioPath = "";
+                          comment = "";
+                          setState(() {});
+                        },
+                        child: Icon(
+                          Icons.delete,
+                          size: 35,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.all(10),
+                            primary: Colors.redAccent,
+                            shape: CircleBorder()),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (selCulture == null) {
+                            showErrorDialog(context, "Выберете культуру");
+                            return;
+                          }
+                          if (selPartner == null) {
+                            showErrorDialog(context, "Выберете хозяйство");
+                            return;
+                          }
+                          Workmanager().cancelAll();
+                          Location location = Location();
+                          final _locationData = await location.getLocation();
+                          LocationInventory inv = LocationInventory(
+                              0,
+                              _locationData.latitude!,
+                              _locationData.longitude!,
+                              int.parse(selCulture!),
+                              int.parse(selPartner!),
+                              comment,
+                              imagePaths,
+                              audioPath,
+                              videoPaths);
+                          var encoded = jsonEncode(inv);
+                          try {
+                            await InternetAddress.lookup('example.com');
+                            invs = [];
+
+                            await PostInventory(inv);
+                          } on SocketException catch (_) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                margin: EdgeInsets.only(right: 100, left: 80),
+                                content: const Text(
+                                  'Инвентаризация проведется при подключении к интернету',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                                backgroundColor: Colors.redAccent,
+                                behavior: SnackBarBehavior.floating,
+                                // action: SnackBarAction(
+                                //   label: 'Action',
+                                //   onPressed: () {
+                                //     // Code to execute.
+                                //   },
+                                // ),
+                              ),
+                            );
+                            if (await storage.read(
+                                key: "isPostedInventoriesLengthIsNull") ==
+                                "1") {
+                              invs = [];
+                            }
+                            invs.add(encoded);
+                            var e = jsonEncode(invs);
+                            var encodedInventories = Map();
+                            encodedInventories["invs"] = e;
+                            Workmanager().registerOneOffTask(
+                                "${DateTime.now()}", "${DateTime.now()}",
+                                existingWorkPolicy: ExistingWorkPolicy.append,
+                                constraints: Constraints(
+                                    networkType: NetworkType.connected),
+                                inputData: {
+                                  "Inventory": e,
+                                  "UserToken": user!.Token
+                                });
+                            await storage.write(
+                                key: "isPostedInventoriesLengthIsNull",
+                                value: "0");
+                            selCulture = null;
+                            imagePaths = [];
+                            videoPaths = [];
+                            audioDuration = 0;
+                            audioPath = "";
+                            comment = "";
+                            // Navigator.pop(context);
+                            setState(() {});
+                          }
+                        },
+                        child: Icon(
+                          Icons.check,
+                          size: 50,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                            primary: Colors.green,
+                            padding: EdgeInsets.all(20),
+                            shape: CircleBorder()),
+                      ),
+                    ],
+                  ),
+                ),
                 drawer: Drawer(
                   child: ListView(
                     padding: EdgeInsets.zero,
@@ -655,122 +770,6 @@ class _InventoryState extends State<Inventory> {
                         ),
                       )
                     ],
-                  ),
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Padding(
-                    padding: const EdgeInsets.only(bottom: 10, right: 15),
-                    child: SizedBox(
-                      width: 80,
-                      height: 80,
-                      child: FloatingActionButton(
-                        heroTag: "confirm",
-                        elevation: 2,
-                        onPressed: () async {
-                          if (selCulture == null) {
-                            showErrorDialog(context, "Выберете культуру");
-                            return;
-                          }
-                          if (selPartner == null) {
-                            showErrorDialog(context, "Выберете хозяйство");
-                            return;
-                          }
-                          Workmanager().cancelAll();
-                          Location location = Location();
-                          final _locationData = await location.getLocation();
-                          LocationInventory inv = LocationInventory(
-                              0,
-                              _locationData.latitude!,
-                              _locationData.longitude!,
-                              int.parse(selCulture!),
-                              int.parse(selPartner!),
-                              comment,
-                              imagePaths,
-                              audioPath,
-                              videoPaths);
-                          var encoded = jsonEncode(inv);
-                          try {
-                            await InternetAddress.lookup('example.com');
-                            invs = [];
-
-                            await PostInventory(inv);
-                          } on SocketException catch (_) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                margin: EdgeInsets.only(right: 100, left: 80),
-                                content: const Text(
-                                  'Инвентаризация проведется при подключении к интернету',
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                                backgroundColor: Colors.redAccent,
-                                behavior: SnackBarBehavior.floating,
-                                // action: SnackBarAction(
-                                //   label: 'Action',
-                                //   onPressed: () {
-                                //     // Code to execute.
-                                //   },
-                                // ),
-                              ),
-                            );
-                            if (await storage.read(
-                                    key: "isPostedInventoriesLengthIsNull") ==
-                                "1") {
-                              invs = [];
-                            }
-                            invs.add(encoded);
-                            var e = jsonEncode(invs);
-                            var encodedInventories = Map();
-                            encodedInventories["invs"] = e;
-                            Workmanager().registerOneOffTask(
-                                "${DateTime.now()}", "${DateTime.now()}",
-                                existingWorkPolicy: ExistingWorkPolicy.append,
-                                constraints: Constraints(
-                                    networkType: NetworkType.connected),
-                                inputData: {
-                                  "Inventory": e,
-                                  "UserToken": user!.Token
-                                });
-                            await storage.write(
-                                key: "isPostedInventoriesLengthIsNull",
-                                value: "0");
-                            selCulture = null;
-                            imagePaths = [];
-                            videoPaths = [];
-                            audioDuration = 0;
-                            audioPath = "";
-                            comment = "";
-                            // Navigator.pop(context);
-                            setState(() {});
-                          }
-                        },
-                        backgroundColor: Colors.green,
-                        child: const Icon(
-                          Icons.check,
-                          size: 40,
-                        ),
-                      ),
-                    )),
-              ),
-              Align(
-                alignment: Alignment.bottomLeft,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 10, left: 15),
-                  child: FloatingActionButton(
-                    heroTag: "clearData",
-                    onPressed: () {
-                      selCulture = null;
-                      selPartner = null;
-                      imagePaths = [];
-                      videoPaths = [];
-                      audioDuration = 0;
-                      audioPath = "";
-                      comment = "";
-                      setState(() {});
-                    },
-                    backgroundColor: Colors.redAccent,
-                    child: const Icon(Icons.delete),
                   ),
                 ),
               ),
