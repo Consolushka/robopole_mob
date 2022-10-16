@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:robopole_mob/classes.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
+import 'package:robopole_mob/pages/recorder.dart';
 import 'package:robopole_mob/utils.dart';
 import 'package:robopole_mob/pages/camera_preview.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -19,8 +20,6 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 
 String? selCulture = null;
 String? selPartner = null;
-int audioDuration = 0;
-String? audioPath = null;
 String comment = "";
 NotificationService _notificationService = NotificationService();
 List<String> invs = [];
@@ -358,65 +357,31 @@ class _InventoryState extends State<Inventory> {
     selCulture = null;
     imagePaths = [];
     videoPaths = [];
-    audioDuration = 0;
+    audioDuration = "";
     audioPath = "";
     comment = "";
     setState(() {});
   }
 
-  Widget AudioDuration() {
-    if (audioPath == "" || audioPath == null) {
-      return StreamBuilder<RecordingDisposition>(
-          stream: recorder.onProgress,
-          builder: (context, snapshot) {
-            if (audioDuration == 0) {
-              final duration =
-                  snapshot.hasData ? snapshot.data!.duration : Duration.zero;
-              audioDuration = duration.inSeconds;
-              return Text('${duration.inSeconds} c');
-            } else {
-              final duration =
-                  snapshot.hasData ? snapshot.data!.duration : Duration.zero;
-              if (audioDuration + 1 == duration.inSeconds) {
-                audioDuration = duration.inSeconds;
-                return Text('${duration.inSeconds} c');
-              } else {
-                return Text('$audioDuration c');
-              }
-            }
-          });
-    } else {
-      return Text("Звуковой файл (${audioDuration}c)");
-    }
-  }
-
   Widget RecorderButton() {
-    if (audioPath == "" || audioPath == null) {
-      return SizedBox(
-        height: 60,
-        width: 60,
-        child: ElevatedButton(
-          onPressed: () async {
-            debugPrint("pressed");
-            if (recorder.isRecording) {
-              await stop();
-            } else {
-              await record();
-            }
-          },
-          child: Icon(
-            recorder.isRecording ? Icons.stop : Icons.mic,
-            size: 30,
-          ),
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: new BorderRadius.circular(60.0),
-            ),
-          ),
+    if (audioPath == "") {
+      return CircleAvatar(
+        radius: 30,
+        backgroundColor: Colors.black45,
+        child: IconButton(
+          icon: Icon(Icons.mic),
+          iconSize: 35,
+          color: Colors.white,
+          onPressed: () async{
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const Recorder(page: "Inventory",)));
+            },
         ),
       );
     } else {
-      return Text("");
+      return Text("Аудиофайл (${audioDuration} c)");
     }
   }
 
@@ -464,7 +429,7 @@ class _InventoryState extends State<Inventory> {
                           selPartner = null;
                           imagePaths = [];
                           videoPaths = [];
-                          audioDuration = 0;
+                          audioDuration = "";
                           audioPath = "";
                           comment = "";
                           setState(() {});
@@ -549,7 +514,7 @@ class _InventoryState extends State<Inventory> {
                             selCulture = null;
                             imagePaths = [];
                             videoPaths = [];
-                            audioDuration = 0;
+                            audioDuration = "";
                             audioPath = "";
                             comment = "";
                             // Navigator.pop(context);
@@ -756,12 +721,14 @@ class _InventoryState extends State<Inventory> {
                                                       CameraView("inventory")),
                                               (route) => false);
                                         },
+                                        style: ElevatedButton.styleFrom(
+                                          primary: Colors.black45.withOpacity(0.26)
+                                        ),
                                         child: const Icon(
                                           Icons.camera_alt_outlined,
                                           size: 40,
                                         )),
                                   ),
-                                  AudioDuration(),
                                   RecorderButton()
                                 ],
                               ),

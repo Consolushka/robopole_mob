@@ -10,6 +10,7 @@ import 'package:robopole_mob/classes.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:robopole_mob/pages/auth.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
+import 'package:robopole_mob/pages/recorder.dart';
 import 'package:robopole_mob/utils.dart';
 import 'package:robopole_mob/pages/camera_preview.dart';
 import 'package:flutter_sound/flutter_sound.dart';
@@ -17,9 +18,7 @@ import 'package:permission_handler/permission_handler.dart' as PH;
 import 'package:workmanager/workmanager.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
-int audioDuration = 0;
 String comment = "";
-String? audioPath = null;
 NotificationService _notificationService = NotificationService();
 List<String> insps = [];
 
@@ -288,59 +287,25 @@ class _FieldInspectionState extends State<FieldInspection> {
     return imagesRow!;
   }
 
-  Widget AudioDuration() {
-    if (audioPath == "" || audioPath == null) {
-      return StreamBuilder<RecordingDisposition>(
-          stream: recorder.onProgress,
-          builder: (context, snapshot) {
-            if (audioDuration == 0) {
-              final duration =
-                  snapshot.hasData ? snapshot.data!.duration : Duration.zero;
-              audioDuration = duration.inSeconds;
-              return Text('${duration.inSeconds} c');
-            } else {
-              final duration =
-                  snapshot.hasData ? snapshot.data!.duration : Duration.zero;
-              if (audioDuration + 1 == duration.inSeconds) {
-                audioDuration = duration.inSeconds;
-                return Text('${duration.inSeconds} c');
-              } else {
-                return Text('$audioDuration c');
-              }
-            }
-          });
-    } else {
-      return Text("Звуковой файл (${audioDuration}c)");
-    }
-  }
-
   Widget RecorderButton() {
     if (audioPath == "" || audioPath == null) {
-      return SizedBox(
-        height: 60,
-        width: 60,
-        child: ElevatedButton(
-          onPressed: () async {
-            debugPrint("pressed");
-            if (recorder.isRecording) {
-              await stop();
-            } else {
-              await record();
-            }
+      return CircleAvatar(
+        radius: 30,
+        backgroundColor: Colors.black45,
+        child: IconButton(
+          icon: Icon(Icons.mic),
+          iconSize: 35,
+          color: Colors.white,
+          onPressed: () async{
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const Recorder(page: "Inspection")));
           },
-          child: Icon(
-            recorder.isRecording ? Icons.stop : Icons.mic,
-            size: 30,
-          ),
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: new BorderRadius.circular(60.0),
-            ),
-          ),
         ),
       );
     } else {
-      return Text("");
+      return Text("Аудиофайл (${audioDuration} c)");
     }
   }
 
@@ -472,7 +437,8 @@ class _FieldInspectionState extends State<FieldInspection> {
   void resetState(){
     imagePaths = [];
     videoPaths = [];
-    audioDuration = 0;
+    audioPath = "";
+    audioDuration = "";
     comment = "";
     setState((){});
   }
@@ -534,7 +500,7 @@ class _FieldInspectionState extends State<FieldInspection> {
                           onPressed: () {
                             imagePaths = [];
                             videoPaths = [];
-                            audioDuration = 0;
+                            audioDuration = "";
                             comment = "";
                             audioPath = "";
                             setState(() {});
@@ -599,7 +565,7 @@ class _FieldInspectionState extends State<FieldInspection> {
                                   value: "0");
                               imagePaths = [];
                               videoPaths = [];
-                              audioDuration = 0;
+                              audioDuration = "";
                               audioPath = "";
                               comment = "";
                               setState(() {});
@@ -723,7 +689,6 @@ class _FieldInspectionState extends State<FieldInspection> {
                                             size: 40,
                                           )),
                                     ),
-                                    AudioDuration(),
                                     RecorderButton()
                                   ],
                                 ),
@@ -735,102 +700,6 @@ class _FieldInspectionState extends State<FieldInspection> {
                     ),
                   ),
                 ),
-                // Align(
-                //   alignment: Alignment.bottomRight,
-                //   child: Padding(
-                //       padding: const EdgeInsets.only(bottom: 10, right: 15),
-                //       child: SizedBox(
-                //         width: 80,
-                //         height: 80,
-                //         child: FloatingActionButton(
-                //           heroTag: "confirm",
-                //           elevation: 2,
-                //           onPressed: () async {
-                //             Workmanager().cancelAll();
-                //             Location location = Location();
-                //             final _locationData = await location.getLocation();
-                //             Inspection insp = Inspection(
-                //                 0,
-                //                 _locationData.latitude!,
-                //                 _locationData.longitude!,
-                //                 currentField["id"],
-                //                 comment,
-                //                 imagePaths,
-                //                 audioPath,
-                //                 videoPaths);
-                //             var encoded = jsonEncode(insp);
-                //             try {
-                //               await InternetAddress.lookup('example.com');
-                //               insps = [];
-                //               await PostInspection(insp);
-                //             } on SocketException catch (_) {
-                //               ScaffoldMessenger.of(context).showSnackBar(
-                //                 SnackBar(
-                //                   margin: EdgeInsets.only(right: 100, left: 80),
-                //                   content: const Text(
-                //                     'Осмотр поля проведется при подключении к интернету',
-                //                     style: TextStyle(fontSize: 12),
-                //                   ),
-                //                   backgroundColor: Colors.redAccent,
-                //                   behavior: SnackBarBehavior.floating,
-                //                 ),
-                //               );
-                //               if (await storage.read(
-                //                   key: "isPostedInspectionsLengthIsNull") ==
-                //                   "1") {
-                //                 insps = [];
-                //               }
-                //               insps.add(encoded);
-                //               var e = jsonEncode(insps);
-                //               var encodedInventories = Map();
-                //               encodedInventories["invs"] = e;
-                //               Workmanager().registerOneOffTask(
-                //                   "${DateTime.now()}", "${DateTime.now()}",
-                //                   existingWorkPolicy: ExistingWorkPolicy.append,
-                //                   constraints: Constraints(
-                //                       networkType: NetworkType.connected),
-                //                   inputData: {
-                //                     "Inspections": e,
-                //                     "UserToken": user!.Token
-                //                   });
-                //               await storage.write(
-                //                   key: "isPostedInspectionsLengthIsNull",
-                //                   value: "0");
-                //               imagePaths = [];
-                //               videoPaths = [];
-                //               audioDuration = 0;
-                //               audioPath = "";
-                //               comment = "";
-                //               setState(() {});
-                //             }
-                //           },
-                //           backgroundColor: Colors.green,
-                //           child: const Icon(
-                //             Icons.check,
-                //             size: 40,
-                //           ),
-                //         ),
-                //       )),
-                // ),
-                // Align(
-                //   alignment: Alignment.bottomLeft,
-                //   child: Padding(
-                //     padding: const EdgeInsets.only(bottom: 10, left: 15),
-                //     child: FloatingActionButton(
-                //       heroTag: "clearData",
-                //       onPressed: () {
-                //         imagePaths = [];
-                //         videoPaths = [];
-                //         audioDuration = 0;
-                //         comment = "";
-                //         audioPath = "";
-                //         setState(() {});
-                //       },
-                //       backgroundColor: Colors.redAccent,
-                //       child: const Icon(Icons.delete),
-                //     ),
-                //   ),
-                // ),
               ],
             );
           }
