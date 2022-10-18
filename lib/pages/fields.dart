@@ -125,7 +125,6 @@ class MapSampleState extends State<MapSample> {
 
     for(int i=0;i<fields.length;i++){
       var field = fields[i];
-
       if(selectedPartnerId != null){
         if(field["usingByPartnerID"].toString() != selectedPartnerId){
           continue;
@@ -187,7 +186,7 @@ class MapSampleState extends State<MapSample> {
         _polygons.add(poly);
       }
       catch(e){
-        debugPrint("Caused error with field ${field["fieldID"]}. ${e.toString()}");
+        debugPrint("Caused error with field ${field["id"]}. ${e.toString()}");
       }
     }
 

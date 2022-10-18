@@ -684,6 +684,9 @@ class _FieldInspectionState extends State<FieldInspection> {
                                               ),
                                             );
                                           },
+                                          style: ElevatedButton.styleFrom(
+                                              primary: Colors.black45.withOpacity(0.26)
+                                          ),
                                           child: const Icon(
                                             Icons.camera_alt_outlined,
                                             size: 40,
