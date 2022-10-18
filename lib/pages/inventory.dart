@@ -24,6 +24,7 @@ String comment = "";
 NotificationService _notificationService = NotificationService();
 List<String> invs = [];
 
+@pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     var userToken = inputData!["UserToken"] as String;
