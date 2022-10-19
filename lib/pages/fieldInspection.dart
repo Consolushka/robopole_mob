@@ -628,7 +628,39 @@ class _FieldInspectionState extends State<FieldInspection> {
                         ListTile(
                             leading: Icon(Icons.info_outline),
                             title: Text('Обновить данные'),
-                            onTap: () async {}),
+                            onTap: () async {
+                              var availableFields = await http.get(
+                                  Uri.parse(APIUri.Field.UpdateFields),
+                                  headers: {
+                                    HttpHeaders.authorizationHeader:
+                                    user!.Token as String,
+                                  });
+
+                              if (availableFields.statusCode != 200) {
+                                var error = Error.fromResponse(availableFields);
+                                Navigator.pop(context);
+                                showErrorDialog(context, error);
+                              }
+
+                              await storage.write(
+                                  key: "Fields", value: availableFields.body);
+                              var part = await http.get(
+                                  Uri.parse(APIUri.Partner.AvailablePartners),
+                                  headers: {
+                                    HttpHeaders.authorizationHeader: user!.Token as String,
+                                  });
+                              if(part.statusCode==200){
+                                await storage.write(key: "Partners", value: part.body);
+                              }
+
+                              var response = await http.get(Uri.parse(APIUri.Inventory.AllCultures),
+                                  headers: {"Authorization": user!.Token as String});
+                              if (response.statusCode == 200) {
+                                await storage.write(key: "Cultures", value: response.body);
+                              }
+                              Navigator.pop(context);
+                              setState(() {});
+                            }),
                       ],
                     ),
                   ),

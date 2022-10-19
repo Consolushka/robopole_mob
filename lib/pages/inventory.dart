@@ -583,8 +583,6 @@ class _InventoryState extends State<Inventory> {
                           title: Text('Обновить данные'),
                           onTap: () async {
                             showLoader(context);
-                            await storage.delete(key: "selectedPartnerId");
-                            await storage.delete(key: "Partners");
                             var availableFields = await http.get(
                                 Uri.parse(APIUri.Field.UpdateFields),
                                 headers: {
@@ -600,6 +598,20 @@ class _InventoryState extends State<Inventory> {
 
                             await storage.write(
                                 key: "Fields", value: availableFields.body);
+                            var part = await http.get(
+                                Uri.parse(APIUri.Partner.AvailablePartners),
+                                headers: {
+                                  HttpHeaders.authorizationHeader: user!.Token as String,
+                                });
+                            if(part.statusCode==200){
+                              await storage.write(key: "Partners", value: part.body);
+                            }
+
+                            var response = await http.get(Uri.parse(APIUri.Inventory.AllCultures),
+                                headers: {"Authorization": user!.Token as String});
+                            if (response.statusCode == 200) {
+                              await storage.write(key: "Cultures", value: response.body);
+                            }
                             Navigator.pop(context);
                             setState(() {});
                           }),
