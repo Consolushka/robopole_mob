@@ -149,7 +149,7 @@ class _InventoryState extends State<Inventory> {
     String culturesJson = "";
     user = User.fromJson(await storage.read(key: "User") as String);
     if (culturesStored == null) {
-      var response = await http.get(Uri.parse(APIUri.Inventory.AllCultures),
+      var response = await http.get(Uri.parse(APIUri.Cultures.AllCultures),
           headers: {"Authorization": user!.Token as String});
       if (response.statusCode == 200) {
         culturesJson = response.body;
@@ -583,7 +583,7 @@ class _InventoryState extends State<Inventory> {
                           title: Text('Обновить данные'),
                           onTap: () async {
                             showLoader(context);
-                            var availableFields = await http.get(
+                            var availableFields = await http.put(
                                 Uri.parse(APIUri.Field.UpdateFields),
                                 headers: {
                                   HttpHeaders.authorizationHeader:
@@ -607,7 +607,7 @@ class _InventoryState extends State<Inventory> {
                               await storage.write(key: "Partners", value: part.body);
                             }
 
-                            var response = await http.get(Uri.parse(APIUri.Inventory.AllCultures),
+                            var response = await http.get(Uri.parse(APIUri.Cultures.AllCultures),
                                 headers: {"Authorization": user!.Token as String});
                             if (response.statusCode == 200) {
                               await storage.write(key: "Cultures", value: response.body);

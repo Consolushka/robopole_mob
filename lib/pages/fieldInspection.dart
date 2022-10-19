@@ -629,7 +629,7 @@ class _FieldInspectionState extends State<FieldInspection> {
                             leading: Icon(Icons.info_outline),
                             title: Text('Обновить данные'),
                             onTap: () async {
-                              var availableFields = await http.get(
+                              var availableFields = await http.put(
                                   Uri.parse(APIUri.Field.UpdateFields),
                                   headers: {
                                     HttpHeaders.authorizationHeader:
@@ -653,7 +653,7 @@ class _FieldInspectionState extends State<FieldInspection> {
                                 await storage.write(key: "Partners", value: part.body);
                               }
 
-                              var response = await http.get(Uri.parse(APIUri.Inventory.AllCultures),
+                              var response = await http.get(Uri.parse(APIUri.Cultures.AllCultures),
                                   headers: {"Authorization": user!.Token as String});
                               if (response.statusCode == 200) {
                                 await storage.write(key: "Cultures", value: response.body);

@@ -53,7 +53,7 @@ class _AuthState extends State<Auth> {
         await storage.write(key: "User", value: user.toJson());
 
         var response = await http.get(
-            Uri.parse('${APIUri.Inventory.AllCultures}'),
+            Uri.parse('${APIUri.Cultures.AllCultures}'),
             headers: {
               "Authorization": user.Token as String
             }
