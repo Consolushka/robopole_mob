@@ -256,7 +256,7 @@ class MapSampleState extends State<MapSample> {
                           showLoader(context);
                           await storage.delete(key: "selectedPartnerId");
                           await storage.delete(key: "Partners");
-                          var availableFields = await http.put(
+                          var availableFields = await http.post(
                               Uri.parse(APIUri.Field.UpdateFields),
                               headers: {
                                 HttpHeaders.authorizationHeader: user.Token as String,

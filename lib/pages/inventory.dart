@@ -227,8 +227,7 @@ class _InventoryState extends State<Inventory> {
   @override
   void initState() {
     Workmanager().initialize(
-      backgroundPostInventory,
-      isInDebugMode: true// The top level function, aka callbackDispatcher
+      backgroundPostInventory// The top level function, aka callbackDispatcher
     );
     super.initState();
 
@@ -684,7 +683,7 @@ class _InventoryState extends State<Inventory> {
                           title: Text('Обновить данные'),
                           onTap: () async {
                             showLoader(context);
-                            var availableFields = await http.put(
+                            var availableFields = await http.post(
                                 Uri.parse(APIUri.Field.UpdateFields),
                                 headers: {
                                   HttpHeaders.authorizationHeader:

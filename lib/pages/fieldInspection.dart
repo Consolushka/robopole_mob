@@ -228,7 +228,7 @@ class _FieldInspectionState extends State<FieldInspection> {
 
   @override
   void initState() {
-    var wm = Workmanager().initialize(
+    Workmanager().initialize(
       backgroundPostInspection, // The top level function, aka callbackDispatcher
     );
     super.initState();
@@ -718,7 +718,7 @@ class _FieldInspectionState extends State<FieldInspection> {
                             leading: Icon(Icons.info_outline),
                             title: Text('Обновить данные'),
                             onTap: () async {
-                              var availableFields = await http.put(
+                              var availableFields = await http.post(
                                   Uri.parse(APIUri.Field.UpdateFields),
                                   headers: {
                                     HttpHeaders.authorizationHeader:
