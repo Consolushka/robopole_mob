@@ -12,8 +12,8 @@ import 'dart:io';
 import 'classes.dart';
 
 
-// String APIHost = "http://devapi.robopole.ru";
-String APIHost = "http://192.168.1.10:7196";
+String APIHost = "http://devapi.robopole.ru";
+// String APIHost = "http://192.168.1.10:7196";
 
 String APIVersion = "/v2";
 String CulturesController = "/cultures";
@@ -119,8 +119,6 @@ class NotificationService {
     'channel name',
     channelDescription: 'channel description',
     playSound: true,
-    priority: Priority.high,
-    importance: Importance.high,
   );
 
   Future<void> showNotifications(message) async {
