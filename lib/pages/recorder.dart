@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:audioplayers/audioplayers.dart' as ap;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:robopole_mob/pages/fieldInspection.dart';
+import 'package:robopole_mob/pages/InspectionField.dart';
 import 'package:robopole_mob/pages/inventory.dart';
 
 String audioPath = "";
@@ -207,7 +207,7 @@ class _RecorderState extends State<Recorder> {
                 Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const FieldInspection()),
+                        builder: (context) => const InspectionField()),
                         (route) => false);
               }
             },

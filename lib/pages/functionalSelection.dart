@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:robopole_mob/pages/fieldInspection.dart';
+import 'package:robopole_mob/pages/InspectionField.dart';
 import 'package:robopole_mob/pages/fields.dart';
 import 'package:robopole_mob/pages/inventory.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -55,7 +55,7 @@ class _FunctionalPageState extends State<FunctionalPage> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10))),
                     child: Container(
-                      height: 180,
+                      height: 160,
                         width: 300,
                         padding: EdgeInsets.only(left: 20),
                       child: Row(
@@ -78,7 +78,7 @@ class _FunctionalPageState extends State<FunctionalPage> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10))),
                     child: Container(
-                        height: 180,
+                        height: 160,
                         width: 300,
                         padding: EdgeInsets.only(left: 20),
                         child: Row(
@@ -101,7 +101,7 @@ class _FunctionalPageState extends State<FunctionalPage> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10))),
                     child: Container(
-                        height: 180,
+                        height: 160,
                         width: 300,
                         padding: EdgeInsets.only(left: 20),
                         child: Row(
@@ -115,33 +115,29 @@ class _FunctionalPageState extends State<FunctionalPage> {
                           ],
                         )
                     )),
-                // ElevatedButton(
-                //     onPressed: ()async {
-                //       await storage.delete(key: "User");
-                //       await storage.delete(key: "Partners");
-                //       await storage.delete(key: "Fields");
-                //       Navigator.pushAndRemoveUntil(context,
-                //           MaterialPageRoute(builder: (context) => const NoAuthed()), (route) => false);
-                //     },
-                //     style: ElevatedButton.styleFrom(
-                //         primary: Colors.white,
-                //         shape: RoundedRectangleBorder(
-                //             borderRadius: BorderRadius.circular(10))),
-                //     child: Container(
-                //         height: 180,
-                //         width: 300,
-                //         padding: EdgeInsets.only(left: 20),
-                //         child: Row(
-                //           children: const [
-                //             Icon(Icons.logout, size: 50,color: Colors.black54,),
-                //             SizedBox(width: 20,),
-                //             Text(
-                //               "Выйти",
-                //               style: TextStyle(fontSize: 26,color: Colors.black54),
-                //             )
-                //           ],
-                //         )
-                //     ))
+                ElevatedButton(
+                    onPressed: (){
+                      Navigator.of(context).push(_createRoute(3));
+                    },
+                    style: ElevatedButton.styleFrom(
+                        primary: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10))),
+                    child: Container(
+                        height: 160,
+                        width: 300,
+                        padding: EdgeInsets.only(left: 20),
+                        child: Row(
+                          children: const [
+                            Icon(FontAwesomeIcons.rulerCombined, size: 50,color: Colors.black54,),
+                            SizedBox(width: 20,),
+                            Text(
+                              "Замер поля",
+                              style: TextStyle(fontSize: 26,color: Colors.black54),
+                            )
+                          ],
+                        )
+                    )),
               ],
             ),
           ),
@@ -184,7 +180,7 @@ Route _createRoute(int functionalId) {
         pageBuilder: (BuildContext context,
             Animation<double> animation, //
             Animation<double> secondaryAnimation) {
-          return const FieldInspection();
+          return const InspectionField();
         },
         transitionsBuilder: (BuildContext context,
             Animation<double> animation, //

@@ -17,6 +17,7 @@ import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart' as PH;
 import 'package:workmanager/workmanager.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 String comment = "";
 NotificationService _notificationService = NotificationService();
@@ -200,14 +201,14 @@ void backgroundPostInspection() {
   });
 }
 
-class FieldInspection extends StatefulWidget {
-  const FieldInspection({Key? key}) : super(key: key);
+class InspectionField extends StatefulWidget {
+  const InspectionField({Key? key}) : super(key: key);
 
   @override
-  State<FieldInspection> createState() => _FieldInspectionState();
+  State<InspectionField> createState() => _InspectionFieldState();
 }
 
-class _FieldInspectionState extends State<FieldInspection> {
+class _InspectionFieldState extends State<InspectionField> {
   final recorder = FlutterSoundRecorder();
   bool isRecorderReady = false;
 
@@ -700,6 +701,17 @@ class _FieldInspectionState extends State<FieldInspection> {
                           },
                         ),
                         ListTile(
+                          leading: const Icon(FontAwesomeIcons.rulerCombined),
+                          title: const Text('Замер поля'),
+                          onTap: () {
+                            Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const FunctionalPage()),
+                                    (route) => false);
+                          },
+                        ),
+                        ListTile(
                           leading: const Icon(Icons.logout),
                           title: const Text('Выйти'),
                           onTap: () async {
@@ -802,7 +814,7 @@ class _FieldInspectionState extends State<FieldInspection> {
                                             await Navigator.of(context).push(
                                               MaterialPageRoute(
                                                 builder: (context) => CameraView(
-                                                    "fieldInspection")
+                                                    "InspectionField")
                                               ),
                                             );
                                           },

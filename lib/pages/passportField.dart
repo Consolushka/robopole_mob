@@ -5,15 +5,15 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-class FieldPassport extends StatefulWidget {
+class PassportField extends StatefulWidget {
   int id;
-  FieldPassport(this.id);
+  PassportField(this.id);
 
   @override
-  State<FieldPassport> createState() => _FieldPassportState();
+  State<PassportField> createState() => _PassportFieldState();
 }
 
-class _FieldPassportState extends State<FieldPassport> {
+class _PassportFieldState extends State<PassportField> {
   Map<int, List<LatLng>> ass = <int, List<LatLng>>{};
   Map field = Map();
   final storage = const FlutterSecureStorage();

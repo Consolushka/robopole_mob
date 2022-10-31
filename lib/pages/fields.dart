@@ -11,8 +11,9 @@ import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:robopole_mob/utils.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import 'package:robopole_mob/pages/field_passport.dart';
+import 'package:robopole_mob/pages/passportField.dart';
 
 class MapSample extends StatefulWidget {
   const MapSample({Key? key}) : super(key: key);
@@ -57,6 +58,17 @@ class MapSampleState extends State<MapSample> {
             MaterialPageRoute(builder: (context) => const FunctionalPage()), (route) => false);
       },
     ));
+    partnersListTiles.add(ListTile(
+      leading: const Icon(FontAwesomeIcons.rulerCombined),
+      title: const Text('Замер поля'),
+      onTap: () {
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const FunctionalPage()),
+                (route) => false);
+      },
+    ),);
     partnersListTiles.add(ListTile(
       title: const Text("Показать все"),
       tileColor: selectedPartnerId==null? Colors.deepOrangeAccent.withOpacity(0.5): null,
@@ -321,7 +333,7 @@ Route _createRoute(int id) {
     pageBuilder: (BuildContext context,
         Animation<double> animation, //
         Animation<double> secondaryAnimation) {
-      return FieldPassport(id);
+      return PassportField(id);
     },
     transitionsBuilder: (BuildContext context,
         Animation<double> animation, //

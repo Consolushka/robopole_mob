@@ -17,6 +17,7 @@ import 'package:workmanager/workmanager.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart' as PH;
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 String? selCulture = null;
 String? selPartner = null;
@@ -661,6 +662,17 @@ class _InventoryState extends State<Inventory> {
                               MaterialPageRoute(
                                   builder: (context) => const FunctionalPage()),
                               (route) => false);
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(FontAwesomeIcons.rulerCombined),
+                        title: const Text('Замер поля'),
+                        onTap: () {
+                          Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const FunctionalPage()),
+                                  (route) => false);
                         },
                       ),
                       ListTile(
