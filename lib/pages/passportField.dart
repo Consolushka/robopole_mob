@@ -4,10 +4,14 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:robopole_mob/pages/measurementField.dart';
+import 'package:robopole_mob/pages/measurementSelection.dart';
 
 class PassportField extends StatefulWidget {
   int id;
-  PassportField(this.id);
+  bool? isMeasurement;
+  PassportField({Key? key, required this.id, this.isMeasurement}) : super(key: key);
 
   @override
   State<PassportField> createState() => _PassportFieldState();
@@ -25,6 +29,35 @@ class _PassportFieldState extends State<PassportField> {
   double rightest = 0.0;
   double lowest = 0.0;
   double leftest = 0.0;
+
+  List<Widget> appBarActions(){
+    List<Widget> result = [];
+    widget.isMeasurement = widget.isMeasurement==null?false:widget.isMeasurement;
+    if(widget.isMeasurement!){
+      result.add(IconButton(
+        icon: const Icon(FontAwesomeIcons.magnifyingGlass),
+        tooltip: 'Выбор поля',
+        onPressed: () {
+          Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => MeasurementSelection()),
+                  (route) => false);
+        },
+      ));
+    }
+    result.add(IconButton(
+      icon: const Icon(FontAwesomeIcons.rulerCombined),
+      tooltip: 'Замер поля',
+      onPressed: () {
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => MeasurementField(field: field)),
+                (route) => true);
+      },
+    ));
+
+    return result;
+  }
 
   Future<Map<int, List<LatLng>>> fetchPost() async {
     var fieldsStorage = await storage.read(key: "Fields");
@@ -114,7 +147,6 @@ class _PassportFieldState extends State<PassportField> {
 
   List<Widget> createInput(String jsonProperty, String propertyName){
     var prop = field[jsonProperty].toString();
-
     return [
       const SizedBox(height: 10),
       Align(
@@ -177,6 +209,7 @@ class _PassportFieldState extends State<PassportField> {
                   appBar: AppBar(
                     title: Text("Поле ${widget.id}"),
                     backgroundColor: Colors.deepOrangeAccent,
+                    actions: appBarActions(),
                   ),
                   body: Stack(
                     children: [

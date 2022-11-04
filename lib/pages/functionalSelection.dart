@@ -5,6 +5,9 @@ import 'package:robopole_mob/pages/inventory.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:permission_handler/permission_handler.dart' as PH;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:robopole_mob/pages/measurementSelection.dart';
+import 'package:robopole_mob/pages/passportField.dart';
+import 'package:robopole_mob/utils.dart';
 
 class FunctionalPage extends StatefulWidget {
   const FunctionalPage({Key? key}) : super(key: key);
@@ -116,8 +119,25 @@ class _FunctionalPageState extends State<FunctionalPage> {
                         )
                     )),
                 ElevatedButton(
-                    onPressed: (){
-                      Navigator.of(context).push(_createRoute(3));
+                    onPressed: () async{
+                      showLoader(context);
+                      var field = await findField(await getUserLocation());
+                      if(field.isEmpty){
+                        Navigator.pop(context);
+                        Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const MeasurementSelection()),
+                                (route) => false);
+                      }
+                      else{
+                        Navigator.pop(context);
+                        Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => PassportField(id: field["id"], isMeasurement: true,)),
+                                (route) => true);
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                         primary: Colors.white,
@@ -175,12 +195,26 @@ Route _createRoute(int functionalId) {
           return child;
         },
       );
-    default:
+    case 3:
       return PageRouteBuilder(
         pageBuilder: (BuildContext context,
             Animation<double> animation, //
             Animation<double> secondaryAnimation) {
           return const InspectionField();
+        },
+        transitionsBuilder: (BuildContext context,
+            Animation<double> animation, //
+            Animation<double> secondaryAnimation,
+            Widget child) {
+          return child;
+        },
+      );
+    default:
+      return PageRouteBuilder(
+        pageBuilder: (BuildContext context,
+            Animation<double> animation, //
+            Animation<double> secondaryAnimation) {
+          return const MeasurementSelection();
         },
         transitionsBuilder: (BuildContext context,
             Animation<double> animation, //
