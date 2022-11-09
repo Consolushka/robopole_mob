@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:robopole_mob/classes.dart';
+import 'package:robopole_mob/utils/classes.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:camera/camera.dart';
 import 'package:robopole_mob/pages/auth.dart';
 
-import 'utils.dart';
+import 'utils/notifications.dart';
 
 List<CameraDescription> cameras = [];
 

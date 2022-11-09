@@ -7,7 +7,9 @@ import 'package:permission_handler/permission_handler.dart' as PH;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:robopole_mob/pages/measurementSelection.dart';
 import 'package:robopole_mob/pages/passportField.dart';
-import 'package:robopole_mob/utils.dart';
+import 'package:robopole_mob/utils/storageUtils.dart';
+
+import '../utils/dialogs.dart';
 
 class FunctionalPage extends StatefulWidget {
   const FunctionalPage({Key? key}) : super(key: key);

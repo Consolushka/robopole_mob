@@ -5,14 +5,16 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as MapTools;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:robopole_mob/classes.dart';
+import 'package:robopole_mob/utils/classes.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:robopole_mob/pages/measurementField.dart';
-import 'package:robopole_mob/utils.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:robopole_mob/pages/auth.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+import '../utils/APIUri.dart';
+import '../utils/dialogs.dart';
 
 class MeasurementComplete extends StatefulWidget {
   Map? field;

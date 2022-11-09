@@ -4,16 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
-import 'package:robopole_mob/classes.dart';
+import 'package:robopole_mob/utils/classes.dart';
 import 'dart:convert';
 import 'package:robopole_mob/main.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
-import 'package:robopole_mob/utils.dart';
+import 'package:robopole_mob/utils/storageUtils.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:robopole_mob/pages/passportField.dart';
+
+import '../utils/APIUri.dart';
+import '../utils/dialogs.dart';
 
 class MapSample extends StatefulWidget {
   const MapSample({Key? key}) : super(key: key);

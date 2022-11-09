@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:robopole_mob/classes.dart';
+import 'package:robopole_mob/utils/classes.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/pages/fields.dart';
 import 'package:robopole_mob/pages/measurementField.dart';
 import 'package:robopole_mob/pages/passportField.dart';
-import 'package:robopole_mob/utils.dart';
+import 'package:robopole_mob/utils/storageUtils.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+import '../utils/dialogs.dart';
 
 class MeasurementSelection extends StatefulWidget {
   const MeasurementSelection({Key? key}) : super(key: key);
@@ -114,7 +116,7 @@ class _MeasurementSelectionState extends State<MeasurementSelection> {
                     padding: EdgeInsets.only(left: 20),
                     child: Row(
                       children: const [
-                        Icon(FontAwesomeIcons.refresh, size: 50,color: Colors.black54,),
+                        Icon(FontAwesomeIcons.arrowsRotate, size: 50,color: Colors.black54,),
                         SizedBox(width: 20,),
                         Text(
                           "Попробовать еще раз",

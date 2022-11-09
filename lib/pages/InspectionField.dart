@@ -6,12 +6,12 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:robopole_mob/classes.dart';
+import 'package:robopole_mob/utils/classes.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:robopole_mob/pages/auth.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:robopole_mob/pages/recorder.dart';
-import 'package:robopole_mob/utils.dart';
+import 'package:robopole_mob/utils/storageUtils.dart';
 import 'package:robopole_mob/pages/camera_preview.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart' as PH;
@@ -19,187 +19,13 @@ import 'package:workmanager/workmanager.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-String comment = "";
-NotificationService _notificationService = NotificationService();
-List<String> insps = [];
+import '../utils/APIUri.dart';
+import '../utils/dialogs.dart';
 
 @pragma('vm:entry-point')
-void backgroundPostInspection() {
-  Workmanager().executeTask((task, inputData) async {
-    var userToken = inputData!["UserToken"] as String;
-    switch (task) {
-      case "inspection":
-        List inspections = jsonDecode(inputData["Inspections"]) as List;
-        for (String inspection in inspections) {
-          Inspection insp = Inspection.fromJson(jsonDecode(inspection));
-          if (insp.PhotosNames!.isNotEmpty) {
-            var request =
-            http.MultipartRequest('POST', Uri.parse(APIUri.Content.SavePhotos));
-            request.headers.addAll({"Authorization": userToken});
-            for (var image in insp.PhotosNames!) {
-              request.files
-                  .add(await http.MultipartFile.fromPath('picture', image));
-            }
-
-            var res = await request.send();
-            var responsed = await http.Response.fromStream(res);
-            if (responsed.statusCode != 200) {
-              var error = Error.fromResponse(responsed);
-              await _notificationService.showNotifications(
-                  "Ошибка при осмотре поля. ${error.Message}");
-              return Future.value(false);
-            }
-            final body =
-            (json.decode(responsed.body) as List<dynamic>).cast<String>();
-            insp.PhotosNames = body;
-          }
-
-          if (insp.VideoNames!.isNotEmpty) {
-            var request =
-            http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveVideos));
-            request.headers.addAll({"Authorization": userToken});
-            for (var image in insp.VideoNames!) {
-              request.files.add(
-                  await http.MultipartFile.fromPath('file', image));
-            }
-            var res = await request.send();
-            var responsed = await http.Response.fromStream(res);
-            if (responsed.statusCode != 200) {
-              var error = Error.fromResponse(responsed);
-              await _notificationService.showNotifications(
-                  "Ошибка при осмотре поля. ${error.Message}");
-              return Future.value(false);
-            }
-            final body =
-            (json.decode(responsed.body) as List<dynamic>).cast<String>();
-            insp.VideoNames = body;
-          }
-
-          if (insp.AudioName != null && insp.AudioName != "") {
-            var request =
-            http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveAudio));
-            request.headers.addAll({"Authorization": userToken});
-            request.files
-                .add(
-                await http.MultipartFile.fromPath('audio', insp.AudioName!));
-
-            var res = await request.send();
-            var responsed = await http.Response.fromStream(res);
-            if (responsed.statusCode != 200) {
-              var error = Error.fromResponse(responsed);
-              await _notificationService.showNotifications(
-                  "Ошибка при осмотре поля. ${error.Message}");
-              return Future.value(false);
-            }
-            final body = responsed.body;
-            insp.AudioName = body;
-          }
-          var jsoned = json.encode(insp);
-
-          var response = await http.post(
-              Uri.parse(APIUri.Inspection.AddInspection),
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": userToken
-              },
-              body: jsoned);
-
-          if (response.statusCode == 200) {
-            final storage = const FlutterSecureStorage();
-            storage.write(key: "isPostedInspectionsLengthIsNull", value: "1");
-            await _notificationService.showNotifications(
-                "Осмотр поля проведен");
-          } else {
-            var error = Error.fromResponse(response);
-            await _notificationService.showNotifications(
-                "Ошибка при проведении инвентаризации. ${error.Message}");
-            return Future.value(false);
-          }
-        }
-        return Future.value(true);
-      case "inventory":
-        List inentory = jsonDecode(inputData["Inventory"]) as List;
-        for (String invetn in inentory) {
-          LocationInventory inv = LocationInventory.fromJson(
-              jsonDecode(invetn));
-          if (inv.PhotosNames!.isNotEmpty) {
-            var request =
-            http.MultipartRequest('POST', Uri.parse(APIUri.Content.SavePhotos));
-            request.headers.addAll({"Authorization": userToken});
-            for (var image in inv.PhotosNames!) {
-              request.files
-                  .add(await http.MultipartFile.fromPath('picture', image));
-            }
-
-            var res = await request.send();
-            var responsed = await http.Response.fromStream(res);
-            final body =
-            (json.decode(responsed.body) as List<dynamic>).cast<String>();
-            inv.PhotosNames = body;
-          }
-
-          if (inv.VideoNames!.isNotEmpty) {
-            var request =
-            http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveVideos));
-            request.headers.addAll({"Authorization": userToken});
-            for (var image in inv.VideoNames!) {
-              request.files.add(
-                  await http.MultipartFile.fromPath('file', image));
-            }
-            var res = await request.send();
-            var responsed = await http.Response.fromStream(res);
-            if (responsed.statusCode != 200) {
-              var error = Error.fromResponse(responsed);
-              await _notificationService.showNotifications(
-                  "Ошибка при проведении инвентаризации. ${error.Message}");
-              return Future.value(false);
-            }
-            final body =
-            (json.decode(responsed.body) as List<dynamic>).cast<String>();
-            inv.VideoNames = body;
-          }
-
-          if (inv.AudioName != null && inv.AudioName != "") {
-            var request =
-            http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveAudio));
-            request.headers.addAll({"Authorization": userToken});
-            request.files
-                .add(
-                await http.MultipartFile.fromPath('audio', inv.AudioName!));
-
-            var res = await request.send();
-            var responsed = await http.Response.fromStream(res);
-            final body = responsed.body;
-            inv.AudioName = body;
-          }
-          var jsoned = json.encode(inv);
-
-          var response = await http.post(
-              Uri.parse(APIUri.Inventory.AddInventory),
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": userToken
-              },
-              body: jsoned);
-
-          if (response.statusCode == 200) {
-            final storage = const FlutterSecureStorage();
-            storage.write(key: "isPostedInventoriesLengthIsNull", value: "1");
-            await _notificationService.showNotifications(
-                "Инвентаризация пройдена");
-          } else {
-            var error = Error.fromResponse(response);
-            await _notificationService.showNotifications(
-                "Ошибка при проведении инвентаризации. ${error.Message}");
-            return Future.value(false);
-          }
-        }
-        return Future.value(true);
-      default:
-        return Future.error("No task name");
-    }
-  });
-}
+import '../utils/backgroundWorker.dart';
+String comment = "";
+List<String> insps = [];
 
 class InspectionField extends StatefulWidget {
   const InspectionField({Key? key}) : super(key: key);
@@ -230,7 +56,7 @@ class _InspectionFieldState extends State<InspectionField> {
   @override
   void initState() {
     Workmanager().initialize(
-      backgroundPostInspection, // The top level function, aka callbackDispatcher
+      backgroundDispatcher, // The top level function, aka callbackDispatcher
     );
     super.initState();
 
