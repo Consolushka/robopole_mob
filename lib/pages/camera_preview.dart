@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:robopole_mob/pages/fieldInspection.dart';
+import 'package:robopole_mob/pages/InspectionField.dart';
 import 'package:robopole_mob/pages/inventory.dart';
 import 'package:video_player/video_player.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -274,11 +274,11 @@ class DisplayPictureScreen extends StatelessWidget {
                             builder: (context) => const Inventory()),
                         (route) => false);
                   } else {
-                    if (page == "fieldInspection") {
+                    if (page == "InspectionField") {
                       Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const FieldInspection()),
+                              builder: (context) => const InspectionField()),
                           (route) => false);
                     }
                   }
@@ -302,11 +302,11 @@ class DisplayPictureScreen extends StatelessWidget {
                             builder: (context) => const Inventory()),
                         (route) => false);
                   } else {
-                    if (page == "fieldInspection") {
+                    if (page == "InspectionField") {
                       Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const FieldInspection()),
+                              builder: (context) => const InspectionField()),
                           (route) => false);
                     }
                   }
@@ -392,11 +392,11 @@ class _VideoPageState extends State<VideoPage> {
                             builder: (context) => const Inventory()),
                             (route) => false);
                   } else {
-                    if (widget.page == "fieldInspection") {
+                    if (widget.page == "InspectionField") {
                       Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const FieldInspection()),
+                              builder: (context) => const InspectionField()),
                               (route) => false);
                     }
                   }
@@ -421,11 +421,11 @@ class _VideoPageState extends State<VideoPage> {
                             builder: (context) => const Inventory()),
                             (route) => false);
                   } else {
-                    if (widget.page == "fieldInspection") {
+                    if (widget.page == "InspectionField") {
                       Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const FieldInspection()),
+                              builder: (context) => const InspectionField()),
                               (route) => false);
                     }
                   }

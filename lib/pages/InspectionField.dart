@@ -6,127 +6,53 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:robopole_mob/classes.dart';
+import 'package:robopole_mob/utils/classes.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:robopole_mob/pages/auth.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:robopole_mob/pages/recorder.dart';
-import 'package:robopole_mob/utils.dart';
+import 'package:robopole_mob/utils/storageUtils.dart';
 import 'package:robopole_mob/pages/camera_preview.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart' as PH;
 import 'package:workmanager/workmanager.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-String comment = "";
-NotificationService _notificationService = NotificationService();
-List<String> insps = [];
+import '../utils/APIUri.dart';
+import '../utils/backgroundWorker.dart';
+import '../utils/dialogs.dart';
 
 @pragma('vm:entry-point')
-void callbackDispatcher() {
+void backgroundDispatcher() {
   Workmanager().executeTask((task, inputData) async {
-    var userToken = inputData!["UserToken"] as String;
-    List inspections = jsonDecode(inputData["Inspections"]) as List;
-    for (String inspection in inspections) {
-      Inspection insp = Inspection.fromJson(jsonDecode(inspection));
-      if (insp.PhotosNames!.isNotEmpty) {
-        var request =
-            http.MultipartRequest('POST', Uri.parse(APIUri.Content.SavePhotos));
-        request.headers.addAll({"Authorization": userToken});
-        for (var image in insp.PhotosNames!) {
-          request.files
-              .add(await http.MultipartFile.fromPath('picture', image));
-        }
-
-        var res = await request.send();
-        var responsed = await http.Response.fromStream(res);
-        if(responsed.statusCode!=200){
-          var error = Error.fromResponse(responsed);
-          await _notificationService.showNotifications(
-              "Ошибка при осмотре поля. ${error.Message}");
-          return Future.value(false);
-        }
-        final body =
-            (json.decode(responsed.body) as List<dynamic>).cast<String>();
-        insp.PhotosNames = body;
-      }
-
-      if (insp.VideoNames!.isNotEmpty) {
-        var request =
-        http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveVideos));
-        request.headers.addAll({"Authorization": userToken});
-        for (var image in insp.VideoNames!) {
-          request.files.add(await http.MultipartFile.fromPath('file', image));
-        }
-        var res = await request.send();
-        var responsed = await http.Response.fromStream(res);
-        if(responsed.statusCode!=200){
-          var error = Error.fromResponse(responsed);
-          await _notificationService.showNotifications(
-              "Ошибка при осмотре поля. ${error.Message}");
-          return Future.value(false);
-        }
-        final body =
-        (json.decode(responsed.body) as List<dynamic>).cast<String>();
-        insp.VideoNames = body;
-      }
-
-      if (insp.AudioName != null && insp.AudioName != "") {
-        var request =
-            http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveAudio));
-        request.headers.addAll({"Authorization": userToken});
-        request.files
-            .add(await http.MultipartFile.fromPath('audio', insp.AudioName!));
-
-        var res = await request.send();
-        var responsed = await http.Response.fromStream(res);
-        if(responsed.statusCode!=200){
-          var error = Error.fromResponse(responsed);
-          await _notificationService.showNotifications(
-              "Ошибка при осмотре поля. ${error.Message}");
-          return Future.value(false);
-        }
-        final body = responsed.body;
-        insp.AudioName = body;
-      }
-      var jsoned = json.encode(insp);
-
-      var response = await http.post(Uri.parse(APIUri.Inspection.AddInspection),
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": userToken
-          },
-          body: jsoned);
-
-      if (response.statusCode == 200) {
-        final storage = const FlutterSecureStorage();
-        storage.write(key: "isPostedInspectionsLengthIsNull", value: "1");
-        await _notificationService.showNotifications("Осмотр поля проведен");
-      } else {
-        var error = Error.fromResponse(response);
-        await _notificationService.showNotifications(
-            "Ошибка при проведении инвентаризации. ${error.Message}");
-        return Future.value(false);
-      }
+    switch (task) {
+      case "inspection":
+        return await backgroundPostInspection(inputData);
+      case "inventory":
+        return await backgroundPostInventory(inputData);
+      case "measurement":
+        return await backgroundPostMeasurement(inputData);
+      default:
+        return Future.value(true);
     }
-    return Future.value(true);
   });
 }
+String comment = "";
+List<String> insps = [];
 
-class FieldInspection extends StatefulWidget {
-  const FieldInspection({Key? key}) : super(key: key);
+class InspectionField extends StatefulWidget {
+  const InspectionField({Key? key}) : super(key: key);
 
   @override
-  State<FieldInspection> createState() => _FieldInspectionState();
+  State<InspectionField> createState() => _InspectionFieldState();
 }
 
-class _FieldInspectionState extends State<FieldInspection> {
+class _InspectionFieldState extends State<InspectionField> {
   final recorder = FlutterSoundRecorder();
   bool isRecorderReady = false;
 
   final storage = const FlutterSecureStorage();
-
-  LatLng _userLocation = const LatLng(53.31, 38.1);
 
   Map currentField = Map();
 
@@ -142,7 +68,7 @@ class _FieldInspectionState extends State<FieldInspection> {
   @override
   void initState() {
     Workmanager().initialize(
-      callbackDispatcher, // The top level function, aka callbackDispatcher
+      backgroundDispatcher, // The top level function, aka callbackDispatcher
     );
     super.initState();
 
@@ -181,7 +107,6 @@ class _FieldInspectionState extends State<FieldInspection> {
     catch(ex){
       showErrorDialog(context, ex.toString());
     }
-    bool isFounded = false;
     for (int i = 0; i < fields.length; i++) {
       var field = fields[i];
       bool result = false;
@@ -246,7 +171,6 @@ class _FieldInspectionState extends State<FieldInspection> {
       if (result) {
         currentField = field;
         currentField["coords"] = polygonCoords;
-        isFounded = true;
         break;
       }
     }
@@ -449,7 +373,6 @@ class _FieldInspectionState extends State<FieldInspection> {
     user = User.fromJson(await storage.read(key: "User") as String);
 
     final _locationData = await location.getLocation();
-    _userLocation = LatLng(_locationData.latitude!, _locationData.longitude!);
 
     return LatLng(_locationData.latitude!, _locationData.longitude!);
   }
@@ -477,7 +400,7 @@ class _FieldInspectionState extends State<FieldInspection> {
                                 builder: (context) => const FunctionalPage()),
                                 (route) => false);
                       },
-                      style: ElevatedButton.styleFrom(primary: Colors.redAccent),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
                       child: const Text("Ok"))
                 ],
               ),
@@ -509,12 +432,11 @@ class _FieldInspectionState extends State<FieldInspection> {
                             child: Icon(Icons.delete, size: 35,),
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.all(10),
-                              primary: Colors.redAccent,
+                              backgroundColor: Colors.redAccent,
                               shape: CircleBorder()),
                         ),
                         ElevatedButton(
                           onPressed: () async {
-                            Workmanager().cancelAll();
                             Location location = Location();
                             final _locationData = await location.getLocation();
                             Inspection insp = Inspection(
@@ -532,6 +454,7 @@ class _FieldInspectionState extends State<FieldInspection> {
                               insps = [];
                               await PostInspection(insp);
                             } on SocketException catch (_) {
+                              Workmanager().cancelByTag("inspection");
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   margin: EdgeInsets.only(right: 100, left: 80),
@@ -552,9 +475,11 @@ class _FieldInspectionState extends State<FieldInspection> {
                               var e = jsonEncode(insps);
                               var encodedInventories = Map();
                               encodedInventories["invs"] = e;
+
                               Workmanager().registerOneOffTask(
-                                  "${DateTime.now()}", "${DateTime.now()}",
-                                  existingWorkPolicy: ExistingWorkPolicy.append,
+                                  "${DateTime.now()}", "inspection",
+                                  existingWorkPolicy: ExistingWorkPolicy.replace,
+                                  tag: "inspection",
                                   constraints: Constraints(
                                       networkType: NetworkType.connected),
                                   inputData: {
@@ -574,7 +499,7 @@ class _FieldInspectionState extends State<FieldInspection> {
                           },
                           child: Icon(Icons.check, size: 50,),
                           style: ElevatedButton.styleFrom(
-                              primary: Colors.green,
+                              backgroundColor: Colors.green,
                               padding: EdgeInsets.all(20),
                               shape: CircleBorder()),
                         ),
@@ -611,6 +536,17 @@ class _FieldInspectionState extends State<FieldInspection> {
                           },
                         ),
                         ListTile(
+                          leading: const Icon(FontAwesomeIcons.rulerCombined),
+                          title: const Text('Замер поля'),
+                          onTap: () {
+                            Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const FunctionalPage()),
+                                    (route) => false);
+                          },
+                        ),
+                        ListTile(
                           leading: const Icon(Icons.logout),
                           title: const Text('Выйти'),
                           onTap: () async {
@@ -629,7 +565,7 @@ class _FieldInspectionState extends State<FieldInspection> {
                             leading: Icon(Icons.info_outline),
                             title: Text('Обновить данные'),
                             onTap: () async {
-                              var availableFields = await http.get(
+                              var availableFields = await http.post(
                                   Uri.parse(APIUri.Field.UpdateFields),
                                   headers: {
                                     HttpHeaders.authorizationHeader:
@@ -653,7 +589,7 @@ class _FieldInspectionState extends State<FieldInspection> {
                                 await storage.write(key: "Partners", value: part.body);
                               }
 
-                              var response = await http.get(Uri.parse(APIUri.Inventory.AllCultures),
+                              var response = await http.get(Uri.parse(APIUri.Cultures.AllCultures),
                                   headers: {"Authorization": user!.Token as String});
                               if (response.statusCode == 200) {
                                 await storage.write(key: "Cultures", value: response.body);
@@ -713,12 +649,12 @@ class _FieldInspectionState extends State<FieldInspection> {
                                             await Navigator.of(context).push(
                                               MaterialPageRoute(
                                                 builder: (context) => CameraView(
-                                                    "fieldInspection")
+                                                    "InspectionField")
                                               ),
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
-                                              primary: Colors.black45.withOpacity(0.26)
+                                              backgroundColor: Colors.black45.withOpacity(0.26)
                                           ),
                                           child: const Icon(
                                             Icons.camera_alt_outlined,

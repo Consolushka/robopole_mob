@@ -5,11 +5,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:robopole_mob/classes.dart';
+import 'package:robopole_mob/utils/classes.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:robopole_mob/pages/recorder.dart';
-import 'package:robopole_mob/utils.dart';
 import 'package:robopole_mob/pages/camera_preview.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:robopole_mob/pages/auth.dart';
@@ -17,91 +16,32 @@ import 'package:workmanager/workmanager.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart' as PH;
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+import '../utils/APIUri.dart';
+import '../utils/backgroundWorker.dart';
+import '../utils/dialogs.dart';
+
+@pragma('vm:entry-point')
+void backgroundDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    switch (task) {
+      case "inspection":
+        return await backgroundPostInspection(inputData);
+      case "inventory":
+        return await backgroundPostInventory(inputData);
+      case "measurement":
+        return await backgroundPostMeasurement(inputData);
+      default:
+        return Future.value(true);
+    }
+  });
+}
 
 String? selCulture = null;
 String? selPartner = null;
 String comment = "";
-NotificationService _notificationService = NotificationService();
 List<String> invs = [];
-
-@pragma('vm:entry-point')
-void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
-    var userToken = inputData!["UserToken"] as String;
-    List inentory = jsonDecode(inputData["Inventory"]) as List;
-    for (String invetn in inentory) {
-      LocationInventory inv = LocationInventory.fromJson(jsonDecode(invetn));
-      if (inv.PhotosNames!.isNotEmpty) {
-        var request =
-            http.MultipartRequest('POST', Uri.parse(APIUri.Content.SavePhotos));
-        request.headers.addAll({"Authorization": userToken});
-        for (var image in inv.PhotosNames!) {
-          request.files
-              .add(await http.MultipartFile.fromPath('picture', image));
-        }
-
-        var res = await request.send();
-        var responsed = await http.Response.fromStream(res);
-        final body =
-            (json.decode(responsed.body) as List<dynamic>).cast<String>();
-        inv.PhotosNames = body;
-      }
-
-      if (inv.VideoNames!.isNotEmpty) {
-        var request =
-            http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveVideos));
-        request.headers.addAll({"Authorization": userToken});
-        for (var image in inv.VideoNames!) {
-          request.files.add(await http.MultipartFile.fromPath('file', image));
-        }
-        var res = await request.send();
-        var responsed = await http.Response.fromStream(res);
-        if (responsed.statusCode != 200) {
-          var error = Error.fromResponse(responsed);
-          await _notificationService.showNotifications(
-              "Ошибка при проведении инвентаризации. ${error.Message}");
-          return Future.value(false);
-        }
-        final body =
-            (json.decode(responsed.body) as List<dynamic>).cast<String>();
-        inv.VideoNames = body;
-      }
-
-      if (inv.AudioName != null && inv.AudioName != "") {
-        var request =
-            http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveAudio));
-        request.headers.addAll({"Authorization": userToken});
-        request.files
-            .add(await http.MultipartFile.fromPath('audio', inv.AudioName!));
-
-        var res = await request.send();
-        var responsed = await http.Response.fromStream(res);
-        final body = responsed.body;
-        inv.AudioName = body;
-      }
-      var jsoned = json.encode(inv);
-
-      var response = await http.post(Uri.parse(APIUri.Inventory.AddInventory),
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": userToken
-          },
-          body: jsoned);
-
-      if (response.statusCode == 200) {
-        final storage = const FlutterSecureStorage();
-        storage.write(key: "isPostedInventoriesLengthIsNull", value: "1");
-        await _notificationService.showNotifications("Инвентаризация пройдена");
-      } else {
-        var error = Error.fromResponse(response);
-        await _notificationService.showNotifications(
-            "Ошибка при проведении инвентаризации. ${error.Message}");
-        return Future.value(false);
-      }
-    }
-    return Future.value(true);
-  });
-}
 
 class Inventory extends StatefulWidget {
   const Inventory({Key? key}) : super(key: key);
@@ -128,7 +68,7 @@ class _InventoryState extends State<Inventory> {
   @override
   void initState() {
     Workmanager().initialize(
-      callbackDispatcher, // The top level function, aka callbackDispatcher
+        backgroundDispatcher// The top level function, aka callbackDispatcher
     );
     super.initState();
 
@@ -149,7 +89,7 @@ class _InventoryState extends State<Inventory> {
     String culturesJson = "";
     user = User.fromJson(await storage.read(key: "User") as String);
     if (culturesStored == null) {
-      var response = await http.get(Uri.parse(APIUri.Inventory.AllCultures),
+      var response = await http.get(Uri.parse(APIUri.Cultures.AllCultures),
           headers: {"Authorization": user!.Token as String});
       if (response.statusCode == 200) {
         culturesJson = response.body;
@@ -441,7 +381,7 @@ class _InventoryState extends State<Inventory> {
                         ),
                         style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.all(10),
-                            primary: Colors.redAccent,
+                            backgroundColor: Colors.redAccent,
                             shape: CircleBorder()),
                       ),
                       ElevatedButton(
@@ -454,7 +394,6 @@ class _InventoryState extends State<Inventory> {
                             showErrorDialog(context, "Выберете хозяйство");
                             return;
                           }
-                          Workmanager().cancelAll();
                           Location location = Location();
                           final _locationData = await location.getLocation();
                           LocationInventory inv = LocationInventory(
@@ -474,6 +413,7 @@ class _InventoryState extends State<Inventory> {
 
                             await PostInventory(inv);
                           } on SocketException catch (_) {
+                            Workmanager().cancelByTag("inventory");
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 margin: EdgeInsets.only(right: 100, left: 80),
@@ -501,14 +441,15 @@ class _InventoryState extends State<Inventory> {
                             var encodedInventories = Map();
                             encodedInventories["invs"] = e;
                             Workmanager().registerOneOffTask(
-                                "${DateTime.now()}", "${DateTime.now()}",
-                                existingWorkPolicy: ExistingWorkPolicy.append,
+                                "${DateTime.now()}", "inventory",
+                                existingWorkPolicy: ExistingWorkPolicy.replace,
+                                tag: "inventory",
                                 constraints: Constraints(
                                     networkType: NetworkType.connected),
                                 inputData: {
                                   "Inventory": e,
-                                  "UserToken": user!.Token
-                                });
+                                  "UserToken": user!.Token}
+                            );
                             await storage.write(
                                 key: "isPostedInventoriesLengthIsNull",
                                 value: "0");
@@ -527,7 +468,7 @@ class _InventoryState extends State<Inventory> {
                           size: 50,
                         ),
                         style: ElevatedButton.styleFrom(
-                            primary: Colors.green,
+                            backgroundColor: Colors.green,
                             padding: EdgeInsets.all(20),
                             shape: CircleBorder()),
                       ),
@@ -564,6 +505,17 @@ class _InventoryState extends State<Inventory> {
                         },
                       ),
                       ListTile(
+                        leading: const Icon(FontAwesomeIcons.rulerCombined),
+                        title: const Text('Замер поля'),
+                        onTap: () {
+                          Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const FunctionalPage()),
+                                  (route) => false);
+                        },
+                      ),
+                      ListTile(
                         leading: const Icon(Icons.logout),
                         title: const Text('Выйти'),
                         onTap: () async {
@@ -583,7 +535,7 @@ class _InventoryState extends State<Inventory> {
                           title: Text('Обновить данные'),
                           onTap: () async {
                             showLoader(context);
-                            var availableFields = await http.get(
+                            var availableFields = await http.post(
                                 Uri.parse(APIUri.Field.UpdateFields),
                                 headers: {
                                   HttpHeaders.authorizationHeader:
@@ -607,7 +559,7 @@ class _InventoryState extends State<Inventory> {
                               await storage.write(key: "Partners", value: part.body);
                             }
 
-                            var response = await http.get(Uri.parse(APIUri.Inventory.AllCultures),
+                            var response = await http.get(Uri.parse(APIUri.Cultures.AllCultures),
                                 headers: {"Authorization": user!.Token as String});
                             if (response.statusCode == 200) {
                               await storage.write(key: "Cultures", value: response.body);
@@ -735,7 +687,7 @@ class _InventoryState extends State<Inventory> {
                                               (route) => false);
                                         },
                                         style: ElevatedButton.styleFrom(
-                                          primary: Colors.black45.withOpacity(0.26)
+                                            backgroundColor: Colors.black45.withOpacity(0.26)
                                         ),
                                         child: const Icon(
                                           Icons.camera_alt_outlined,

@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:robopole_mob/pages/fieldInspection.dart';
+import 'package:robopole_mob/pages/InspectionField.dart';
 import 'package:robopole_mob/pages/fields.dart';
 import 'package:robopole_mob/pages/inventory.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:permission_handler/permission_handler.dart' as PH;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:robopole_mob/pages/measurementSelection.dart';
+import 'package:robopole_mob/pages/passportField.dart';
+import 'package:robopole_mob/utils/storageUtils.dart';
+
+import '../utils/dialogs.dart';
 
 class FunctionalPage extends StatefulWidget {
   const FunctionalPage({Key? key}) : super(key: key);
@@ -55,7 +60,7 @@ class _FunctionalPageState extends State<FunctionalPage> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10))),
                     child: Container(
-                      height: 180,
+                      height: 160,
                         width: 300,
                         padding: EdgeInsets.only(left: 20),
                       child: Row(
@@ -78,7 +83,7 @@ class _FunctionalPageState extends State<FunctionalPage> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10))),
                     child: Container(
-                        height: 180,
+                        height: 160,
                         width: 300,
                         padding: EdgeInsets.only(left: 20),
                         child: Row(
@@ -101,7 +106,7 @@ class _FunctionalPageState extends State<FunctionalPage> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10))),
                     child: Container(
-                        height: 180,
+                        height: 160,
                         width: 300,
                         padding: EdgeInsets.only(left: 20),
                         child: Row(
@@ -115,33 +120,46 @@ class _FunctionalPageState extends State<FunctionalPage> {
                           ],
                         )
                     )),
-                // ElevatedButton(
-                //     onPressed: ()async {
-                //       await storage.delete(key: "User");
-                //       await storage.delete(key: "Partners");
-                //       await storage.delete(key: "Fields");
-                //       Navigator.pushAndRemoveUntil(context,
-                //           MaterialPageRoute(builder: (context) => const NoAuthed()), (route) => false);
-                //     },
-                //     style: ElevatedButton.styleFrom(
-                //         primary: Colors.white,
-                //         shape: RoundedRectangleBorder(
-                //             borderRadius: BorderRadius.circular(10))),
-                //     child: Container(
-                //         height: 180,
-                //         width: 300,
-                //         padding: EdgeInsets.only(left: 20),
-                //         child: Row(
-                //           children: const [
-                //             Icon(Icons.logout, size: 50,color: Colors.black54,),
-                //             SizedBox(width: 20,),
-                //             Text(
-                //               "Выйти",
-                //               style: TextStyle(fontSize: 26,color: Colors.black54),
-                //             )
-                //           ],
-                //         )
-                //     ))
+                ElevatedButton(
+                    onPressed: () async{
+                      showLoader(context);
+                      var field = await findField(await getUserLocation());
+                      if(field.isEmpty){
+                        Navigator.pop(context);
+                        Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const MeasurementSelection()),
+                                (route) => false);
+                      }
+                      else{
+                        Navigator.pop(context);
+                        Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => PassportField(id: field["id"], isMeasurement: true,)),
+                                (route) => true);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                        primary: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10))),
+                    child: Container(
+                        height: 160,
+                        width: 300,
+                        padding: EdgeInsets.only(left: 20),
+                        child: Row(
+                          children: const [
+                            Icon(FontAwesomeIcons.rulerCombined, size: 50,color: Colors.black54,),
+                            SizedBox(width: 20,),
+                            Text(
+                              "Замер поля",
+                              style: TextStyle(fontSize: 26,color: Colors.black54),
+                            )
+                          ],
+                        )
+                    )),
               ],
             ),
           ),
@@ -179,12 +197,26 @@ Route _createRoute(int functionalId) {
           return child;
         },
       );
+    case 3:
+      return PageRouteBuilder(
+        pageBuilder: (BuildContext context,
+            Animation<double> animation, //
+            Animation<double> secondaryAnimation) {
+          return const InspectionField();
+        },
+        transitionsBuilder: (BuildContext context,
+            Animation<double> animation, //
+            Animation<double> secondaryAnimation,
+            Widget child) {
+          return child;
+        },
+      );
     default:
       return PageRouteBuilder(
         pageBuilder: (BuildContext context,
             Animation<double> animation, //
             Animation<double> secondaryAnimation) {
-          return const FieldInspection();
+          return const MeasurementSelection();
         },
         transitionsBuilder: (BuildContext context,
             Animation<double> animation, //

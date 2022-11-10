@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:robopole_mob/classes.dart';
+import 'package:robopole_mob/utils/classes.dart';
 import 'package:http/http.dart' as http;
 import 'package:robopole_mob/pages/functionalSelection.dart';
-import 'package:robopole_mob/utils.dart';
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+
+import '../utils/APIUri.dart';
+import '../utils/dialogs.dart';
 
 class Auth extends StatefulWidget {
   const Auth({Key? key}) : super(key: key);
@@ -53,7 +55,7 @@ class _AuthState extends State<Auth> {
         await storage.write(key: "User", value: user.toJson());
 
         var response = await http.get(
-            Uri.parse('${APIUri.Inventory.AllCultures}'),
+            Uri.parse('${APIUri.Cultures.AllCultures}'),
             headers: {
               "Authorization": user.Token as String
             }
@@ -65,38 +67,17 @@ class _AuthState extends State<Auth> {
         Navigator.pushAndRemoveUntil(context,
             MaterialPageRoute(builder: (context) => const FunctionalPage()), (
                 route) => false);
-        debugPrint(await storage.read(key: "User"));
       }
       else{
         errorMessage = "Нет доступа к мобильному приложению";
-        showErrorDialog();
+        showErrorDialog(context, errorMessage);
       }
     }
     else{
       var error = Error.fromResponse(response);
       errorMessage = "${error.Message}";
-      showErrorDialog();
+      showErrorDialog(context, errorMessage);
     }
-  }
-
-  void showErrorDialog(){
-    showDialog(
-        context: context,
-        builder: (BuildContext context)=>AlertDialog(
-          content: Text(errorMessage, style: TextStyle(fontSize: 24),),
-          actions: [
-            ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  // Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                    primary: Colors.red
-                ),
-                child: const Text("Ok"))
-          ],
-        )
-    );
   }
 
   @override

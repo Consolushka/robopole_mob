@@ -4,15 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
-import 'package:robopole_mob/classes.dart';
+import 'package:robopole_mob/utils/classes.dart';
 import 'dart:convert';
 import 'package:robopole_mob/main.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
-import 'package:robopole_mob/utils.dart';
+import 'package:robopole_mob/utils/storageUtils.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import 'package:robopole_mob/pages/field_passport.dart';
+import 'package:robopole_mob/pages/passportField.dart';
+
+import '../utils/APIUri.dart';
+import '../utils/dialogs.dart';
 
 class MapSample extends StatefulWidget {
   const MapSample({Key? key}) : super(key: key);
@@ -57,6 +61,17 @@ class MapSampleState extends State<MapSample> {
             MaterialPageRoute(builder: (context) => const FunctionalPage()), (route) => false);
       },
     ));
+    partnersListTiles.add(ListTile(
+      leading: const Icon(FontAwesomeIcons.rulerCombined),
+      title: const Text('Замер поля'),
+      onTap: () {
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const FunctionalPage()),
+                (route) => false);
+      },
+    ),);
     partnersListTiles.add(ListTile(
       title: const Text("Показать все"),
       tileColor: selectedPartnerId==null? Colors.deepOrangeAccent.withOpacity(0.5): null,
@@ -256,7 +271,7 @@ class MapSampleState extends State<MapSample> {
                           showLoader(context);
                           await storage.delete(key: "selectedPartnerId");
                           await storage.delete(key: "Partners");
-                          var availableFields = await http.get(
+                          var availableFields = await http.post(
                               Uri.parse(APIUri.Field.UpdateFields),
                               headers: {
                                 HttpHeaders.authorizationHeader: user.Token as String,
@@ -321,7 +336,7 @@ Route _createRoute(int id) {
     pageBuilder: (BuildContext context,
         Animation<double> animation, //
         Animation<double> secondaryAnimation) {
-      return FieldPassport(id);
+      return PassportField(id: id);
     },
     transitionsBuilder: (BuildContext context,
         Animation<double> animation, //
