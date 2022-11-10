@@ -400,7 +400,7 @@ class _InspectionFieldState extends State<InspectionField> {
                                 builder: (context) => const FunctionalPage()),
                                 (route) => false);
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                      style: ElevatedButton.styleFrom(primary: Colors.redAccent),
                       child: const Text("Ok"))
                 ],
               ),
@@ -432,7 +432,7 @@ class _InspectionFieldState extends State<InspectionField> {
                             child: Icon(Icons.delete, size: 35,),
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.all(10),
-                              backgroundColor: Colors.redAccent,
+                              primary: Colors.redAccent,
                               shape: CircleBorder()),
                         ),
                         ElevatedButton(
@@ -499,7 +499,7 @@ class _InspectionFieldState extends State<InspectionField> {
                           },
                           child: Icon(Icons.check, size: 50,),
                           style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
+                              primary: Colors.green,
                               padding: EdgeInsets.all(20),
                               shape: CircleBorder()),
                         ),
@@ -654,7 +654,7 @@ class _InspectionFieldState extends State<InspectionField> {
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.black45.withOpacity(0.26)
+                                              primary: Colors.black45.withOpacity(0.26)
                                           ),
                                           child: const Icon(
                                             Icons.camera_alt_outlined,

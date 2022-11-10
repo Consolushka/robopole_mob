@@ -52,6 +52,7 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
   final storage = const FlutterSecureStorage();
 
   LatLng currentLatLng = new LatLng(33, 33);
+  double calculatedArea = 0;
   User? user;
 
   double highest = 0.0;
@@ -230,8 +231,8 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
     measurement.forEach((element) {
       mpCoordiantes.add(MapTools.LatLng(element.latitude, element.longitude));
     });
-    var area = (MapTools.SphericalUtil.computeArea(mpCoordiantes) / 10000)
-        .toStringAsFixed(10);
+    var area = (MapTools.SphericalUtil.computeArea(mpCoordiantes) / 10000);
+    calculatedArea = area;
     res.addAll([
       Align(
         alignment: Alignment.centerLeft,
@@ -244,7 +245,7 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
         enabled: false,
         enableSuggestions: false,
         autocorrect: false,
-        initialValue: area,
+        initialValue: area.toStringAsFixed(2),
         style: const TextStyle(fontSize: 20),
         decoration: InputDecoration(
             hintText: "",
@@ -288,7 +289,7 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
                   children: [
                     ElevatedButton(
                       onPressed: () async {
-                        FieldMeasurement measurement = FieldMeasurement(0, field["id"]==0?null:field["id"], widget.measurement);
+                        FieldMeasurement measurement = FieldMeasurement(0, field["id"]==0?null:field["id"], widget.measurement, calculatedArea);
                         var encoded = jsonEncode(measurement);
                         try {
                           await InternetAddress.lookup('example.com');
@@ -338,7 +339,7 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
                         size: 50,
                       ),
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
+                          primary: Colors.green,
                           padding: EdgeInsets.all(20),
                           shape: CircleBorder()),
                     ),

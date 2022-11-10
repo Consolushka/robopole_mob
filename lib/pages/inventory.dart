@@ -381,7 +381,7 @@ class _InventoryState extends State<Inventory> {
                         ),
                         style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.all(10),
-                            backgroundColor: Colors.redAccent,
+                            primary: Colors.redAccent,
                             shape: CircleBorder()),
                       ),
                       ElevatedButton(
@@ -468,7 +468,7 @@ class _InventoryState extends State<Inventory> {
                           size: 50,
                         ),
                         style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            primary: Colors.green,
                             padding: EdgeInsets.all(20),
                             shape: CircleBorder()),
                       ),
@@ -687,7 +687,7 @@ class _InventoryState extends State<Inventory> {
                                               (route) => false);
                                         },
                                         style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.black45.withOpacity(0.26)
+                                            primary: Colors.black45.withOpacity(0.26)
                                         ),
                                         child: const Icon(
                                           Icons.camera_alt_outlined,

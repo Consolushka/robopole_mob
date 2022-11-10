@@ -196,9 +196,10 @@ class FieldMeasurement {
   int? ID;
   int? FieldID;
   List<LatLng>? CoordinatesList;
+  double? Area;
   DateTime? Date;
 
-  FieldMeasurement(this.ID, this.FieldID, this.CoordinatesList){
+  FieldMeasurement(this.ID, this.FieldID, this.CoordinatesList, this.Area){
     Date = DateTime.now();
   }
 
@@ -208,6 +209,7 @@ class FieldMeasurement {
       "id": ID,
       "fieldID": FieldID,
       "coordinatesList": CoordinatesList,
+      "area": Area,
       "date": encDate
     };
   }
@@ -215,6 +217,7 @@ class FieldMeasurement {
   FieldMeasurement.fromJson(Map<String, dynamic> json){
     ID=json["id"];
     FieldID = json["fieldID"];
+    Area = json["area"];
 
     var lst = [];
     json["coordinatesList"].forEach((el)=>{
