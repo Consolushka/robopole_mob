@@ -20,10 +20,24 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../utils/APIUri.dart';
+import '../utils/backgroundWorker.dart';
 import '../utils/dialogs.dart';
 
 @pragma('vm:entry-point')
-import '../utils/backgroundWorker.dart';
+void backgroundDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    switch (task) {
+      case "inspection":
+        return await backgroundPostInspection(inputData);
+      case "inventory":
+        return await backgroundPostInventory(inputData);
+      case "measurement":
+        return await backgroundPostMeasurement(inputData);
+      default:
+        return Future.value(true);
+    }
+  });
+}
 String comment = "";
 List<String> insps = [];
 
@@ -39,8 +53,6 @@ class _InspectionFieldState extends State<InspectionField> {
   bool isRecorderReady = false;
 
   final storage = const FlutterSecureStorage();
-
-  LatLng _userLocation = const LatLng(53.31, 38.1);
 
   Map currentField = Map();
 
@@ -95,7 +107,6 @@ class _InspectionFieldState extends State<InspectionField> {
     catch(ex){
       showErrorDialog(context, ex.toString());
     }
-    bool isFounded = false;
     for (int i = 0; i < fields.length; i++) {
       var field = fields[i];
       bool result = false;
@@ -160,7 +171,6 @@ class _InspectionFieldState extends State<InspectionField> {
       if (result) {
         currentField = field;
         currentField["coords"] = polygonCoords;
-        isFounded = true;
         break;
       }
     }
@@ -363,7 +373,6 @@ class _InspectionFieldState extends State<InspectionField> {
     user = User.fromJson(await storage.read(key: "User") as String);
 
     final _locationData = await location.getLocation();
-    _userLocation = LatLng(_locationData.latitude!, _locationData.longitude!);
 
     return LatLng(_locationData.latitude!, _locationData.longitude!);
   }
@@ -391,7 +400,7 @@ class _InspectionFieldState extends State<InspectionField> {
                                 builder: (context) => const FunctionalPage()),
                                 (route) => false);
                       },
-                      style: ElevatedButton.styleFrom(primary: Colors.redAccent),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
                       child: const Text("Ok"))
                 ],
               ),
@@ -423,7 +432,7 @@ class _InspectionFieldState extends State<InspectionField> {
                             child: Icon(Icons.delete, size: 35,),
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.all(10),
-                              primary: Colors.redAccent,
+                              backgroundColor: Colors.redAccent,
                               shape: CircleBorder()),
                         ),
                         ElevatedButton(
@@ -490,7 +499,7 @@ class _InspectionFieldState extends State<InspectionField> {
                           },
                           child: Icon(Icons.check, size: 50,),
                           style: ElevatedButton.styleFrom(
-                              primary: Colors.green,
+                              backgroundColor: Colors.green,
                               padding: EdgeInsets.all(20),
                               shape: CircleBorder()),
                         ),
@@ -645,7 +654,7 @@ class _InspectionFieldState extends State<InspectionField> {
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
-                                              primary: Colors.black45.withOpacity(0.26)
+                                              backgroundColor: Colors.black45.withOpacity(0.26)
                                           ),
                                           child: const Icon(
                                             Icons.camera_alt_outlined,

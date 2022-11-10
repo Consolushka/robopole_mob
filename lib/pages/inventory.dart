@@ -19,11 +19,24 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../utils/APIUri.dart';
+import '../utils/backgroundWorker.dart';
 import '../utils/dialogs.dart';
 
-
 @pragma('vm:entry-point')
-import '../utils/backgroundWorker.dart';
+void backgroundDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    switch (task) {
+      case "inspection":
+        return await backgroundPostInspection(inputData);
+      case "inventory":
+        return await backgroundPostInventory(inputData);
+      case "measurement":
+        return await backgroundPostMeasurement(inputData);
+      default:
+        return Future.value(true);
+    }
+  });
+}
 
 String? selCulture = null;
 String? selPartner = null;
@@ -368,7 +381,7 @@ class _InventoryState extends State<Inventory> {
                         ),
                         style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.all(10),
-                            primary: Colors.redAccent,
+                            backgroundColor: Colors.redAccent,
                             shape: CircleBorder()),
                       ),
                       ElevatedButton(
@@ -455,7 +468,7 @@ class _InventoryState extends State<Inventory> {
                           size: 50,
                         ),
                         style: ElevatedButton.styleFrom(
-                            primary: Colors.green,
+                            backgroundColor: Colors.green,
                             padding: EdgeInsets.all(20),
                             shape: CircleBorder()),
                       ),
@@ -674,7 +687,7 @@ class _InventoryState extends State<Inventory> {
                                               (route) => false);
                                         },
                                         style: ElevatedButton.styleFrom(
-                                          primary: Colors.black45.withOpacity(0.26)
+                                            backgroundColor: Colors.black45.withOpacity(0.26)
                                         ),
                                         child: const Icon(
                                           Icons.camera_alt_outlined,

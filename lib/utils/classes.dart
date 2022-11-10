@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class User {
   int? ID;
@@ -185,6 +186,41 @@ class Inspection {
     PhotosNames = json["photosNames"].cast<String>();
     VideoNames = json["videoNames"].cast<String>();
     AudioName = json["audioName"];
+    Date = DateTime.parse(json["date"]);
+  }
+}
+
+
+
+class FieldMeasurement {
+  int? ID;
+  int? FieldID;
+  List<LatLng>? CoordinatesList;
+  DateTime? Date;
+
+  FieldMeasurement(this.ID, this.FieldID, this.CoordinatesList){
+    Date = DateTime.now();
+  }
+
+  Map toJson() {
+    var encDate = Date!.toIso8601String();
+    return {
+      "id": ID,
+      "fieldID": FieldID,
+      "coordinatesList": CoordinatesList,
+      "date": encDate
+    };
+  }
+
+  FieldMeasurement.fromJson(Map<String, dynamic> json){
+    ID=json["id"];
+    FieldID = json["fieldID"];
+
+    var lst = [];
+    json["coordinatesList"].forEach((el)=>{
+      lst.add(LatLng(el[0], el[1]))
+    });
+    CoordinatesList = lst.cast<LatLng>();
     Date = DateTime.parse(json["date"]);
   }
 }

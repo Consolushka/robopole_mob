@@ -8,6 +8,7 @@ String PartnerController = "/partners";
 String FieldController = "/fields";
 String InventoryController ="/inventories";
 String FieldInspectionController = "/fieldinspections";
+String FieldMeasurementController = "/fieldmeasurement";
 
 class APIUri{
   static _UserController User= _UserController();
@@ -17,6 +18,7 @@ class APIUri{
   static _InventoryController Inventory = _InventoryController();
   static _FieldInspectionController Inspection = _FieldInspectionController();
   static _ContentController Content = _ContentController();
+  static _FieldMeasurement Measurement = _FieldMeasurement();
 }
 
 class _UserController{
@@ -51,6 +53,11 @@ class _InventoryController{
 class _FieldInspectionController{
   static String route = "$APIHost$APIVersion$FieldInspectionController";
   String AddInspection = "$route";
+}
+
+class _FieldMeasurement{
+  static String route="$APIHost$APIVersion$FieldMeasurementController";
+  String AddMeasurement = "$route";
 }
 
 class _ContentController{

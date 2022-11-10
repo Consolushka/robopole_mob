@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as MapTools;
 import 'package:http/http.dart' as http;
+import 'package:robopole_mob/utils/backgroundWorker.dart';
 import 'dart:convert';
 import 'package:robopole_mob/utils/classes.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -12,9 +13,27 @@ import 'package:robopole_mob/pages/measurementField.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:robopole_mob/pages/auth.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:workmanager/workmanager.dart';
 
 import '../utils/APIUri.dart';
 import '../utils/dialogs.dart';
+
+@pragma('vm:entry-point')
+void backgroundDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    switch (task) {
+      case "inspection":
+        return await backgroundPostInspection(inputData);
+      case "inventory":
+        return await backgroundPostInventory(inputData);
+      case "measurement":
+        return await backgroundPostMeasurement(inputData);
+      default:
+        return Future.value(true);
+    }
+  });
+}
+List<String> measurements = [];
 
 class MeasurementComplete extends StatefulWidget {
   Map? field;
@@ -44,6 +63,10 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
 
   @override
   void initState() {
+    Workmanager().initialize(
+        backgroundDispatcher// The top level function, aka callbackDispatcher
+    );
+
     super.initState();
 
     if(widget.field!=null){
@@ -57,6 +80,35 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
 
   Future getUser() async{
     user = User.fromJson(await storage.read(key: "User") as String);
+  }
+
+  Future PostMeasurement(measurement) async {
+    showLoader(context);
+    var jsoned = jsonEncode(measurement);
+    var response = await http.post(Uri.parse(APIUri.Measurement.AddMeasurement),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": user!.Token as String
+        },
+        body: jsoned);
+
+    Navigator.pop(context);
+
+    if (response.statusCode == 200) {
+      showOKDialog(context, "Замер поля проведен", this.openFunctionalSelection);
+    } else {
+      var error = Error.fromResponse(response);
+      var errorMessage = "${error.Message} при обращаении к ${error.Path}";
+      showErrorDialog(context, errorMessage);
+    }
+  }
+
+  void openFunctionalSelection(){
+    Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+            builder: (context) => const FunctionalPage()),
+            (route) => false);
   }
 
   void getPolygonCoords() {
@@ -88,16 +140,10 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
     List<LatLng> polygonCoords = [];
     cooooords.forEach((element) {
       var c = element;
-      double? lat;
-      double? lng;
       if (element[0] is double) {
-        lat = c[1];
-        lng = c[0];
         polygonCoords.add(LatLng(c[1], c[0]));
       } else {
         c = element[0];
-        lat = c[1];
-        lng = c[0];
         polygonCoords.add(LatLng(c[1], c[0]));
       }
     });
@@ -180,11 +226,6 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
 
   List<Widget> FieldInfo() {
     List<Widget> res = [const SizedBox(height: 20)];
-    res.addAll(createInput("externalName", "Идентификатор"));
-    res.addAll(createInput("partnerName", "Владелец"));
-    res.addAll(createInput("usingByPartnerName", "Пользователь"));
-    res.addAll(createInput("agroSize", "Площадь от агронома"));
-    res.addAll(createInput("calculatedArea", "Расчитанная площадь"));
     List<MapTools.LatLng> mpCoordiantes = [];
     measurement.forEach((element) {
       mpCoordiantes.add(MapTools.LatLng(element.latitude, element.longitude));
@@ -192,9 +233,6 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
     var area = (MapTools.SphericalUtil.computeArea(mpCoordiantes) / 10000)
         .toStringAsFixed(10);
     res.addAll([
-      const SizedBox(
-        height: 20,
-      ),
       Align(
         alignment: Alignment.centerLeft,
         child: Text(
@@ -217,9 +255,11 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
                     color: Colors.black54.withOpacity(0.5), width: 1))),
       )
     ]);
-    res.add(SizedBox(
-      height: 30,
-    ));
+    res.addAll(createInput("externalName", "Идентификатор"));
+    res.addAll(createInput("partnerName", "Владелец"));
+    res.addAll(createInput("usingByPartnerName", "Пользователь"));
+    res.addAll(createInput("agroSize", "Площадь от агронома"));
+    res.addAll(createInput("calculatedArea", "Расчитанная площадь"));
     createInput("agroCultureName", "Культура").forEach((element) {
       res.add(element);
     });
@@ -241,6 +281,70 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
                       MaterialPageRoute(builder: (context) => MeasurementField(field: widget.field)),
                           (route) => false);}, icon: Icon(Icons.refresh))],
                 ),
+              bottomNavigationBar: BottomAppBar(
+                color: Colors.white,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () async {
+                        FieldMeasurement measurement = FieldMeasurement(0, field["id"]==0?null:field["id"], widget.measurement);
+                        var encoded = jsonEncode(measurement);
+                        try {
+                          await InternetAddress.lookup('example.com');
+                          measurements = [];
+                          await PostMeasurement(measurement);
+                        } on SocketException catch (_) {
+                          Workmanager().cancelByTag("measurement");
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              margin: EdgeInsets.only(right: 100, left: 80),
+                              content: const Text(
+                                'Замер поля проведется при подключении к интернету',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                              backgroundColor: Colors.redAccent,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          if (await storage.read(
+                              key: "isPostedMeasurementsLengthIsNull") ==
+                              "1") {
+                            measurements = [];
+                          }
+                          measurements.add(encoded);
+                          var e = jsonEncode(measurements);
+                          var encodedInventories = Map();
+                          encodedInventories["invs"] = e;
+
+                          Workmanager().registerOneOffTask(
+                              "${DateTime.now()}", "measurement",
+                              existingWorkPolicy: ExistingWorkPolicy.replace,
+                              tag: "measurement",
+                              constraints: Constraints(
+                                  networkType: NetworkType.connected),
+                              inputData: {
+                                "Measurements": e,
+                                "UserToken": user!.Token
+                              });
+                          await storage.write(
+                              key: "isPostedMeasurementsLengthIsNull",
+                              value: "0");
+                          setState(() {});
+                        }
+                      },
+                      child: Icon(
+                        Icons.check,
+                        size: 50,
+                      ),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: EdgeInsets.all(20),
+                          shape: CircleBorder()),
+                    ),
+                  ],
+                ),
+              ),
                 drawer: Drawer(
                   child: ListView(
                     padding: EdgeInsets.zero,
@@ -360,7 +464,8 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
                     ),
                     FieldMap()
                   ],
-                ));
+                ),
+            );
           } else {
             return Scaffold(
               backgroundColor: Colors.white,
