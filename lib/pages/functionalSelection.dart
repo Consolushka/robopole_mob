@@ -28,13 +28,22 @@ class _FunctionalPageState extends State<FunctionalPage> {
   }
 
   Future initLocation() async {
-    var check = await PH.Permission.location.status;
-    if(check.isDenied){
+    var locationPermission = await PH.Permission.location.status;
+    if(locationPermission.isDenied){
       final status = await PH.Permission.location.request();
       debugPrint(status.toString());
       if (status != PH.PermissionStatus.granted) {
-        throw 'Microphone permission not granted';
+        throw 'Location permission not granted';
       }
+    }
+
+    var notificationPermission = await PH.Permission.location.status;
+    if(notificationPermission.isDenied){
+      final status = await PH.Permission.location.request();
+      debugPrint(status.toString());
+      // if (status != PH.PermissionStatus.granted) {
+      //   throw ' permission not granted';
+      // }
     }
   }
 

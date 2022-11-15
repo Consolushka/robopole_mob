@@ -116,7 +116,6 @@ class _InventoryState extends State<Inventory> {
     }
 
     var partnersStorage = await storage.read(key: "Partners");
-    String partnersJson = "";
 
     if (partnersStorage == null) {
       var part =
@@ -124,16 +123,15 @@ class _InventoryState extends State<Inventory> {
         HttpHeaders.authorizationHeader: user!.Token as String,
       });
       if (part.statusCode == 200) {
-        partnersJson = part.body;
+        partnersStorage = part.body;
         await storage.write(key: "Partners", value: part.body);
       } else {
         var error = Error.fromResponse(part);
+        partnersStorage = "[]";
       }
-    } else {
-      partnersJson = partnersStorage;
     }
 
-    var decodedPartners = jsonDecode(partnersJson) as List;
+    var decodedPartners = jsonDecode(partnersStorage) as List;
 
     for (var partner in decodedPartners) {
       partnersItems.add(DropdownMenuItem(

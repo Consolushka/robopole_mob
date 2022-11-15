@@ -27,7 +27,7 @@ Future backgroundPostInspection(inputData) async {
       if (responsed.statusCode != 200) {
         var error = Error.fromResponse(responsed);
         await _notificationService.showNotifications(
-            "Ошибка при осмотре поля. ${error.Message}");
+            "Ошибка при осмотре поля. ${error.Message}", NotificationService.Inspection);
         return Future.value(false);
       }
       final body =
@@ -48,7 +48,7 @@ Future backgroundPostInspection(inputData) async {
       if (responsed.statusCode != 200) {
         var error = Error.fromResponse(responsed);
         await _notificationService.showNotifications(
-            "Ошибка при осмотре поля. ${error.Message}");
+            "Ошибка при осмотре поля. ${error.Message}", NotificationService.Inspection);
         return Future.value(false);
       }
       final body =
@@ -69,7 +69,7 @@ Future backgroundPostInspection(inputData) async {
       if (responsed.statusCode != 200) {
         var error = Error.fromResponse(responsed);
         await _notificationService.showNotifications(
-            "Ошибка при осмотре поля. ${error.Message}");
+            "Ошибка при осмотре поля. ${error.Message}", NotificationService.Inspection);
         return Future.value(false);
       }
       final body = responsed.body;
@@ -89,11 +89,11 @@ Future backgroundPostInspection(inputData) async {
       final storage = const FlutterSecureStorage();
       storage.write(key: "isPostedInspectionsLengthIsNull", value: "1");
       await _notificationService.showNotifications(
-          "Осмотр поля проведен");
+          "Осмотр поля ${insp.FieldID} от ${insp.Date!.day.toString()}.${insp.Date!.month.toString()}.${insp.Date!.year.toString()} проведен", NotificationService.Inspection);
     } else {
       var error = Error.fromResponse(response);
       await _notificationService.showNotifications(
-          "Ошибка при проведении инвентаризации. ${error.Message}");
+          "Ошибка при проведении осмотра поля. ${error.Message}", NotificationService.Inspection);
       return Future.value(false);
     }
   }
@@ -136,7 +136,7 @@ Future backgroundPostInventory(inputData) async {
       if (responsed.statusCode != 200) {
         var error = Error.fromResponse(responsed);
         await _notificationService.showNotifications(
-            "Ошибка при проведении инвентаризации. ${error.Message}");
+            "Ошибка при проведении инвентаризации. ${error.Message}", NotificationService.Inventory);
         return Future.value(false);
       }
       final body =
@@ -171,11 +171,11 @@ Future backgroundPostInventory(inputData) async {
       final storage = const FlutterSecureStorage();
       storage.write(key: "isPostedInventoriesLengthIsNull", value: "1");
       await _notificationService.showNotifications(
-          "Инвентаризация пройдена");
+          "Инвентаризация от ${inv.Date!.day.toString()}.${inv.Date!.month.toString()}.${inv.Date!.year.toString()} пройдена", NotificationService.Inventory);
     } else {
       var error = Error.fromResponse(response);
       await _notificationService.showNotifications(
-          "Ошибка при проведении инвентаризации. ${error.Message}");
+          "Ошибка при проведении инвентаризации. ${error.Message}", NotificationService.Inventory);
       return Future.value(false);
     }
   }
@@ -186,11 +186,11 @@ Future backgroundPostMeasurement(inputData) async {
   List measurements = jsonDecode(inputData["Measurements"]) as List;
   NotificationService _notificationService = NotificationService();
   var userToken = inputData!["UserToken"] as String;
-  for (String invetn in measurements) {
-    FieldMeasurement inv = FieldMeasurement.fromJson(
-        jsonDecode(invetn));
+  for (String measureJson in measurements) {
+    FieldMeasurement measure = FieldMeasurement.fromJson(
+        jsonDecode(measureJson));
 
-    var jsoned = json.encode(inv);
+    var jsoned = json.encode(measure);
 
     var response = await http.post(
         Uri.parse(APIUri.Measurement.AddMeasurement),
@@ -204,11 +204,11 @@ Future backgroundPostMeasurement(inputData) async {
       final storage = const FlutterSecureStorage();
       storage.write(key: "isPostedMeasurementsLengthIsNull", value: "1");
       await _notificationService.showNotifications(
-          "Замер поля проведен");
+          "Замер поля ${measure.FieldID} от ${measure.Date!.day.toString()}.${measure.Date!.month.toString()}.${measure.Date!.year.toString()} проведен", NotificationService.Measurement);
     } else {
       var error = Error.fromResponse(response);
       await _notificationService.showNotifications(
-          "Ошибка при замере поля. ${error.Message}");
+          "Ошибка при замере поля. ${error.Message}", NotificationService.Measurement);
       return Future.value(false);
     }
   }
