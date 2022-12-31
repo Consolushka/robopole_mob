@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
+import 'package:robopole_mob/pages/measurementSelection.dart';
+import 'package:robopole_mob/pages/passportField.dart';
 import 'dart:convert';
 import 'package:robopole_mob/utils/classes.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -19,6 +21,7 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../utils/APIUri.dart';
+import '../utils/storageUtils.dart';
 import '../utils/backgroundWorker.dart';
 import '../utils/dialogs.dart';
 
@@ -68,8 +71,8 @@ class _InventoryState extends State<Inventory> {
   @override
   void initState() {
     Workmanager().initialize(
-        backgroundDispatcher// The top level function, aka callbackDispatcher
-    );
+        backgroundDispatcher // The top level function, aka callbackDispatcher
+        );
     super.initState();
 
     initRecorder();
@@ -311,12 +314,14 @@ class _InventoryState extends State<Inventory> {
           icon: Icon(Icons.mic),
           iconSize: 35,
           color: Colors.white,
-          onPressed: () async{
+          onPressed: () async {
             Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => const Recorder(page: "Inventory",)));
-            },
+                    builder: (context) => const Recorder(
+                          page: "Inventory",
+                        )));
+          },
         ),
       );
     } else {
@@ -430,7 +435,7 @@ class _InventoryState extends State<Inventory> {
                               ),
                             );
                             if (await storage.read(
-                                key: "isPostedInventoriesLengthIsNull") ==
+                                    key: "isPostedInventoriesLengthIsNull") ==
                                 "1") {
                               invs = [];
                             }
@@ -446,8 +451,8 @@ class _InventoryState extends State<Inventory> {
                                     networkType: NetworkType.connected),
                                 inputData: {
                                   "Inventory": e,
-                                  "UserToken": user!.Token}
-                            );
+                                  "UserToken": user!.Token
+                                });
                             await storage.write(
                                 key: "isPostedInventoriesLengthIsNull",
                                 value: "0");
@@ -505,12 +510,28 @@ class _InventoryState extends State<Inventory> {
                       ListTile(
                         leading: const Icon(FontAwesomeIcons.rulerCombined),
                         title: const Text('Замер поля'),
-                        onTap: () {
-                          Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const FunctionalPage()),
-                                  (route) => false);
+                        onTap: () async {
+                          showLoader(context);
+                          var field = await findField(await getUserLocation());
+                          if (field.isEmpty) {
+                            Navigator.pop(context);
+                            Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const MeasurementSelection()),
+                                (route) => false);
+                          } else {
+                            Navigator.pop(context);
+                            Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => PassportField(
+                                          id: field["id"],
+                                          isMeasurement: true,
+                                        )),
+                                (route) => true);
+                          }
                         },
                       ),
                       ListTile(
@@ -551,16 +572,22 @@ class _InventoryState extends State<Inventory> {
                             var part = await http.get(
                                 Uri.parse(APIUri.Partner.AvailablePartners),
                                 headers: {
-                                  HttpHeaders.authorizationHeader: user!.Token as String,
+                                  HttpHeaders.authorizationHeader:
+                                      user!.Token as String,
                                 });
-                            if(part.statusCode==200){
-                              await storage.write(key: "Partners", value: part.body);
+                            if (part.statusCode == 200) {
+                              await storage.write(
+                                  key: "Partners", value: part.body);
                             }
 
-                            var response = await http.get(Uri.parse(APIUri.Cultures.AllCultures),
-                                headers: {"Authorization": user!.Token as String});
+                            var response = await http.get(
+                                Uri.parse(APIUri.Cultures.AllCultures),
+                                headers: {
+                                  "Authorization": user!.Token as String
+                                });
                             if (response.statusCode == 200) {
-                              await storage.write(key: "Cultures", value: response.body);
+                              await storage.write(
+                                  key: "Cultures", value: response.body);
                             }
                             Navigator.pop(context);
                             setState(() {});
@@ -685,8 +712,8 @@ class _InventoryState extends State<Inventory> {
                                               (route) => false);
                                         },
                                         style: ElevatedButton.styleFrom(
-                                            primary: Colors.black45.withOpacity(0.26)
-                                        ),
+                                            primary: Colors.black45
+                                                .withOpacity(0.26)),
                                         child: const Icon(
                                           Icons.camera_alt_outlined,
                                           size: 40,

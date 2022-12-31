@@ -5,6 +5,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
+import 'package:robopole_mob/pages/measurementSelection.dart';
+import 'package:robopole_mob/pages/passportField.dart';
 import 'dart:convert';
 import 'package:robopole_mob/utils/classes.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -20,6 +22,7 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../utils/APIUri.dart';
+import '../utils/storageUtils.dart' as SU;
 import '../utils/backgroundWorker.dart';
 import '../utils/dialogs.dart';
 
@@ -38,6 +41,7 @@ void backgroundDispatcher() {
     }
   });
 }
+
 String comment = "";
 List<String> insps = [];
 
@@ -101,10 +105,9 @@ class _InspectionFieldState extends State<InspectionField> {
   Future findField() async {
     var location = await getUserLocation();
     var fields = List.empty();
-    try{
+    try {
       fields = await requestForFields();
-    }
-    catch(ex){
+    } catch (ex) {
       showErrorDialog(context, ex.toString());
     }
     for (int i = 0; i < fields.length; i++) {
@@ -187,20 +190,23 @@ class _InspectionFieldState extends State<InspectionField> {
           video: videoPaths[i],
           imageFormat: ImageFormat.JPEG,
           maxWidth: 75,
-      quality: 100);
+          quality: 100);
       images.add(Container(
-        width: 75,
+          width: 75,
           height: 75,
           child: Stack(
             children: [
               Image.file(File(thumbnailPath!)),
               Align(
                 alignment: Alignment.centerLeft,
-                child: Icon(Icons.play_arrow, color: Colors.grey, size: 40,),
+                child: Icon(
+                  Icons.play_arrow,
+                  color: Colors.grey,
+                  size: 40,
+                ),
               )
             ],
-          )
-      ));
+          )));
     }
 
     imagesRow = Row(
@@ -221,7 +227,7 @@ class _InspectionFieldState extends State<InspectionField> {
           icon: Icon(Icons.mic),
           iconSize: 35,
           color: Colors.white,
-          onPressed: () async{
+          onPressed: () async {
             Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -293,7 +299,7 @@ class _InspectionFieldState extends State<InspectionField> {
 
       var res = await request.send();
       var responsed = await http.Response.fromStream(res);
-      if(responsed.statusCode!=200){
+      if (responsed.statusCode != 200) {
         Navigator.pop(context);
         showErrorDialog(context, responsed.reasonPhrase);
         return;
@@ -303,23 +309,22 @@ class _InspectionFieldState extends State<InspectionField> {
       insp.PhotosNames = body;
     }
 
-
     if (insp.VideoNames.isNotEmpty) {
       var request =
-      http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveVideos));
+          http.MultipartRequest('POST', Uri.parse(APIUri.Content.SaveVideos));
       request.headers.addAll({"Authorization": user!.Token as String});
       for (var image in insp.VideoNames) {
         request.files.add(await http.MultipartFile.fromPath('file', image));
       }
       var res = await request.send();
       var responsed = await http.Response.fromStream(res);
-      if(responsed.statusCode!=200){
+      if (responsed.statusCode != 200) {
         Navigator.pop(context);
         showErrorDialog(context, responsed.reasonPhrase);
         return;
       }
       final body =
-      (json.decode(responsed.body) as List<dynamic>).cast<String>();
+          (json.decode(responsed.body) as List<dynamic>).cast<String>();
       insp.VideoNames = body;
     }
 
@@ -332,7 +337,7 @@ class _InspectionFieldState extends State<InspectionField> {
 
       var res = await request.send();
       var responsed = await http.Response.fromStream(res);
-      if(responsed.statusCode!=200){
+      if (responsed.statusCode != 200) {
         Navigator.pop(context);
         showErrorDialog(context, responsed.reasonPhrase);
         return;
@@ -359,13 +364,13 @@ class _InspectionFieldState extends State<InspectionField> {
     }
   }
 
-  void resetState(){
+  void resetState() {
     imagePaths = [];
     videoPaths = [];
     audioPath = "";
     audioDuration = "";
     comment = "";
-    setState((){});
+    setState(() {});
   }
 
   Future<LatLng> getUserLocation() async {
@@ -383,7 +388,7 @@ class _InspectionFieldState extends State<InspectionField> {
       future: findField(),
       builder: (ctx, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          if(currentField.isEmpty){
+          if (currentField.isEmpty) {
             return Scaffold(
               appBar: AppBar(
                 title: Text("Осмотр поля"),
@@ -398,15 +403,15 @@ class _InspectionFieldState extends State<InspectionField> {
                             context,
                             MaterialPageRoute(
                                 builder: (context) => const FunctionalPage()),
-                                (route) => false);
+                            (route) => false);
                       },
-                      style: ElevatedButton.styleFrom(primary: Colors.redAccent),
+                      style:
+                          ElevatedButton.styleFrom(primary: Colors.redAccent),
                       child: const Text("Ok"))
                 ],
               ),
             );
-          }
-          else{
+          } else {
             return Stack(
               children: [
                 Scaffold(
@@ -429,9 +434,12 @@ class _InspectionFieldState extends State<InspectionField> {
                             audioPath = "";
                             setState(() {});
                           },
-                            child: Icon(Icons.delete, size: 35,),
+                          child: Icon(
+                            Icons.delete,
+                            size: 35,
+                          ),
                           style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.all(10),
+                              padding: EdgeInsets.all(10),
                               primary: Colors.redAccent,
                               shape: CircleBorder()),
                         ),
@@ -467,7 +475,7 @@ class _InspectionFieldState extends State<InspectionField> {
                                 ),
                               );
                               if (await storage.read(
-                                  key: "isPostedInspectionsLengthIsNull") ==
+                                      key: "isPostedInspectionsLengthIsNull") ==
                                   "1") {
                                 insps = [];
                               }
@@ -478,7 +486,8 @@ class _InspectionFieldState extends State<InspectionField> {
 
                               Workmanager().registerOneOffTask(
                                   "${DateTime.now()}", "inspection",
-                                  existingWorkPolicy: ExistingWorkPolicy.replace,
+                                  existingWorkPolicy:
+                                      ExistingWorkPolicy.replace,
                                   tag: "inspection",
                                   constraints: Constraints(
                                       networkType: NetworkType.connected),
@@ -497,7 +506,10 @@ class _InspectionFieldState extends State<InspectionField> {
                               setState(() {});
                             }
                           },
-                          child: Icon(Icons.check, size: 50,),
+                          child: Icon(
+                            Icons.check,
+                            size: 50,
+                          ),
                           style: ElevatedButton.styleFrom(
                               primary: Colors.green,
                               padding: EdgeInsets.all(20),
@@ -531,19 +543,36 @@ class _InspectionFieldState extends State<InspectionField> {
                             Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const FunctionalPage()),
-                                    (route) => false);
+                                    builder: (context) =>
+                                        const FunctionalPage()),
+                                (route) => false);
                           },
                         ),
                         ListTile(
                           leading: const Icon(FontAwesomeIcons.rulerCombined),
                           title: const Text('Замер поля'),
-                          onTap: () {
-                            Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const FunctionalPage()),
-                                    (route) => false);
+                          onTap: () async {
+                            showLoader(context);
+                            var field = await SU.findField(await getUserLocation());
+                            if (field.isEmpty) {
+                              Navigator.pop(context);
+                              Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const MeasurementSelection()),
+                                  (route) => false);
+                            } else {
+                              Navigator.pop(context);
+                              Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => PassportField(
+                                            id: field["id"],
+                                            isMeasurement: true,
+                                          )),
+                                  (route) => true);
+                            }
                           },
                         ),
                         ListTile(
@@ -558,7 +587,7 @@ class _InspectionFieldState extends State<InspectionField> {
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) => const Auth()),
-                                    (route) => false);
+                                (route) => false);
                           },
                         ),
                         ListTile(
@@ -569,7 +598,7 @@ class _InspectionFieldState extends State<InspectionField> {
                                   Uri.parse(APIUri.Field.UpdateFields),
                                   headers: {
                                     HttpHeaders.authorizationHeader:
-                                    user!.Token as String,
+                                        user!.Token as String,
                                   });
 
                               if (availableFields.statusCode != 200) {
@@ -583,16 +612,22 @@ class _InspectionFieldState extends State<InspectionField> {
                               var part = await http.get(
                                   Uri.parse(APIUri.Partner.AvailablePartners),
                                   headers: {
-                                    HttpHeaders.authorizationHeader: user!.Token as String,
+                                    HttpHeaders.authorizationHeader:
+                                        user!.Token as String,
                                   });
-                              if(part.statusCode==200){
-                                await storage.write(key: "Partners", value: part.body);
+                              if (part.statusCode == 200) {
+                                await storage.write(
+                                    key: "Partners", value: part.body);
                               }
 
-                              var response = await http.get(Uri.parse(APIUri.Cultures.AllCultures),
-                                  headers: {"Authorization": user!.Token as String});
+                              var response = await http.get(
+                                  Uri.parse(APIUri.Cultures.AllCultures),
+                                  headers: {
+                                    "Authorization": user!.Token as String
+                                  });
                               if (response.statusCode == 200) {
-                                await storage.write(key: "Cultures", value: response.body);
+                                await storage.write(
+                                    key: "Cultures", value: response.body);
                               }
                               Navigator.pop(context);
                               setState(() {});
@@ -639,7 +674,8 @@ class _InspectionFieldState extends State<InspectionField> {
                               Container(
                                 margin: EdgeInsets.only(right: 100),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     SizedBox(
                                       height: 60,
@@ -648,14 +684,14 @@ class _InspectionFieldState extends State<InspectionField> {
                                           onPressed: () async {
                                             await Navigator.of(context).push(
                                               MaterialPageRoute(
-                                                builder: (context) => CameraView(
-                                                    "InspectionField")
-                                              ),
+                                                  builder: (context) =>
+                                                      CameraView(
+                                                          "InspectionField")),
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
-                                              primary: Colors.black45.withOpacity(0.26)
-                                          ),
+                                              primary: Colors.black45
+                                                  .withOpacity(0.26)),
                                           child: const Icon(
                                             Icons.camera_alt_outlined,
                                             size: 40,

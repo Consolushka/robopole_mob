@@ -38,11 +38,12 @@ class _MeasurementSelectionState extends State<MeasurementSelection> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             ElevatedButton(
-                onPressed: (){
+                onPressed: () {
                   Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (context) => MeasurementField()),
-                          (route) => true);
+                      MaterialPageRoute(
+                          builder: (context) => MeasurementField()),
+                      (route) => true);
                 },
                 style: ElevatedButton.styleFrom(
                     primary: Colors.white,
@@ -54,21 +55,27 @@ class _MeasurementSelectionState extends State<MeasurementSelection> {
                     padding: EdgeInsets.only(left: 20),
                     child: Row(
                       children: const [
-                        Icon(FontAwesomeIcons.xmark, size: 50,color: Colors.black54,),
-                        SizedBox(width: 20,),
-                        Text(
-                          "Поля нет в РобоПоле",
-                          style: TextStyle(fontSize: 20,color: Colors.black54),
-                        )
+                        Icon(
+                          FontAwesomeIcons.xmark,
+                          size: 50,
+                          color: Colors.black54,
+                        ),
+                        SizedBox(
+                          width: 20,
+                        ),
+                        Flexible(
+                            child: Text(
+                          "Поля нет в РобоПоле (замерить новое)",
+                          style: TextStyle(fontSize: 24, color: Colors.black54),
+                        ))
                       ],
-                    )
-                )),
+                    ))),
             ElevatedButton(
-                onPressed: (){
+                onPressed: () {
                   Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (context) => MapSample()),
-                          (route) => true);
+                      (route) => true);
                 },
                 style: ElevatedButton.styleFrom(
                     primary: Colors.white,
@@ -80,30 +87,38 @@ class _MeasurementSelectionState extends State<MeasurementSelection> {
                     padding: EdgeInsets.only(left: 20),
                     child: Row(
                       children: const [
-                        Icon(Icons.info_outline, size: 50,color: Colors.black54,),
-                        SizedBox(width: 20,),
-                        Text(
-                          "Выбрать на поле",
-                          style: TextStyle(fontSize: 26,color: Colors.black54),
-                        )
+                        Icon(
+                          Icons.info_outline,
+                          size: 50,
+                          color: Colors.black54,
+                        ),
+                        SizedBox(
+                          width: 20,
+                        ),
+                        Flexible(
+                            child: Text(
+                          "Выбрать поле на карте",
+                          style: TextStyle(fontSize: 24, color: Colors.black54),
+                        ))
                       ],
-                    )
-                )),
+                    ))),
             ElevatedButton(
                 onPressed: () async {
                   showLoader(context);
                   var field = await findField(await getUserLocation());
-                  if(field.isEmpty){
+                  if (field.isEmpty) {
                     Navigator.pop(context);
-                    setState((){});
-                  }
-                  else{
+                    setState(() {});
+                  } else {
                     Navigator.pop(context);
                     Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => PassportField(id: field["id"], isMeasurement: true,)),
-                            (route) => false);
+                            builder: (context) => PassportField(
+                                  id: field["id"],
+                                  isMeasurement: true,
+                                )),
+                        (route) => false);
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -116,15 +131,21 @@ class _MeasurementSelectionState extends State<MeasurementSelection> {
                     padding: EdgeInsets.only(left: 20),
                     child: Row(
                       children: const [
-                        Icon(FontAwesomeIcons.arrowsRotate, size: 50,color: Colors.black54,),
-                        SizedBox(width: 20,),
-                        Text(
-                          "Попробовать еще раз",
-                          style: TextStyle(fontSize: 20,color: Colors.black54),
-                        )
+                        Icon(
+                          FontAwesomeIcons.arrowsRotate,
+                          size: 50,
+                          color: Colors.black54,
+                        ),
+                        SizedBox(
+                          width: 20,
+                        ),
+                        Flexible(
+                            child: Text(
+                          "Попробовать еще раз определить автоматически",
+                          style: TextStyle(fontSize: 24, color: Colors.black54),
+                        ))
                       ],
-                    )
-                )),
+                    ))),
           ],
         ),
       ),

@@ -41,7 +41,7 @@ class _PassportFieldState extends State<PassportField> {
           Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => MeasurementSelection()),
-                  (route) => false);
+                  (route) => true);
         },
       ));
     }
@@ -63,7 +63,7 @@ class _PassportFieldState extends State<PassportField> {
     var fieldsStorage = await storage.read(key: "Fields");
     var fields = jsonDecode(fieldsStorage as String) as List;
     Map<int, List<LatLng>> p = <int, List<LatLng>>{};
-    for(int i=0;i<fields.length-1;i++){
+    for(int i=0;i<fields.length;i++){
       if(fields[i]["id"] ==widget.id){
         field = fields[i];
       }
