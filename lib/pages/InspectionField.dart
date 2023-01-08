@@ -216,7 +216,7 @@ class _InspectionFieldState extends State<InspectionField> {
   }
 
   Widget RecorderButton() {
-    if (audioPath == "" || audioPath == null) {
+    if (audioPath == "") {
       return CircleAvatar(
         radius: 30,
         backgroundColor: Colors.black45,
@@ -403,7 +403,7 @@ class _InspectionFieldState extends State<InspectionField> {
                             (route) => false);
                       },
                       style:
-                          ElevatedButton.styleFrom(primary: Colors.redAccent),
+                          ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
                       child: const Text("Ok"))
                 ],
               ),
@@ -436,8 +436,7 @@ class _InspectionFieldState extends State<InspectionField> {
                             size: 35,
                           ),
                           style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.all(10),
-                              primary: Colors.redAccent,
+                              padding: EdgeInsets.all(10), backgroundColor: Colors.redAccent,
                               shape: CircleBorder()),
                         ),
                         ElevatedButton(
@@ -504,7 +503,7 @@ class _InspectionFieldState extends State<InspectionField> {
                             size: 50,
                           ),
                           style: ElevatedButton.styleFrom(
-                              primary: Colors.green,
+                              backgroundColor: Colors.green,
                               padding: EdgeInsets.all(20),
                               shape: CircleBorder()),
                         ),
@@ -647,7 +646,7 @@ class _InspectionFieldState extends State<InspectionField> {
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
-                                              primary: Colors.black45
+                                              backgroundColor: Colors.black45
                                                   .withOpacity(0.26)),
                                           child: const Icon(
                                             Icons.camera_alt_outlined,

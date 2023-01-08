@@ -90,7 +90,7 @@ class _RecorderState extends State<Recorder> {
                   size: 80,
                 ),
                 style: ElevatedButton.styleFrom(
-                  primary: Colors.black45,
+                  backgroundColor: Colors.black45,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(55),
                   ),
@@ -189,8 +189,7 @@ class _RecorderState extends State<Recorder> {
               size: 35,
             ),
             style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.all(10),
-                primary: Colors.redAccent,
+                padding: EdgeInsets.all(10), backgroundColor: Colors.redAccent,
                 shape: CircleBorder()),
           ),
           ElevatedButton(
@@ -216,7 +215,7 @@ class _RecorderState extends State<Recorder> {
               size: 50,
             ),
             style: ElevatedButton.styleFrom(
-                primary: Colors.green,
+                backgroundColor: Colors.green,
                 padding: EdgeInsets.all(20),
                 shape: CircleBorder()),
           ),

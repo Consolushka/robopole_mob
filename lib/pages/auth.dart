@@ -131,7 +131,7 @@ class _AuthState extends State<Auth> {
                 ElevatedButton(
                     onPressed: auth,
                     style: ElevatedButton.styleFrom(
-                        primary: Colors.deepOrangeAccent,
+                        backgroundColor: Colors.deepOrangeAccent,
                         padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30))),

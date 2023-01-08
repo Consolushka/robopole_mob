@@ -8,7 +8,7 @@ class Software{
     Map currentField = Map();
 
     Location location = Location();
-    final userLocation = await location.getLocation() as LocationData;
+    final userLocation = await location.getLocation();
     var fields = List.empty();
     try {
       fields = await LocalStorage.Fields();

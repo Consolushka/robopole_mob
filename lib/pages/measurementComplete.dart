@@ -334,7 +334,7 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
                         size: 50,
                       ),
                       style: ElevatedButton.styleFrom(
-                          primary: Colors.green,
+                          backgroundColor: Colors.green,
                           padding: EdgeInsets.all(20),
                           shape: CircleBorder()),
                     ),

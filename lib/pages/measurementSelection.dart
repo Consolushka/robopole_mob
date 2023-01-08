@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:robopole_mob/utils/classes.dart';
 import 'package:robopole_mob/pages/fields.dart';
 import 'package:robopole_mob/pages/measurementField.dart';
@@ -17,7 +16,6 @@ class MeasurementSelection extends StatefulWidget {
 }
 
 class _MeasurementSelectionState extends State<MeasurementSelection> {
-  LatLng _userLocation = const LatLng(53.31, 38.1);
 
   Map currentField = Map();
 
@@ -44,7 +42,7 @@ class _MeasurementSelectionState extends State<MeasurementSelection> {
                       (route) => true);
                 },
                 style: ElevatedButton.styleFrom(
-                    primary: Colors.white,
+                    backgroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10))),
                 child: Container(
@@ -76,7 +74,7 @@ class _MeasurementSelectionState extends State<MeasurementSelection> {
                       (route) => true);
                 },
                 style: ElevatedButton.styleFrom(
-                    primary: Colors.white,
+                    backgroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10))),
                 child: Container(
@@ -120,7 +118,7 @@ class _MeasurementSelectionState extends State<MeasurementSelection> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                    primary: Colors.white,
+                    backgroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10))),
                 child: Container(

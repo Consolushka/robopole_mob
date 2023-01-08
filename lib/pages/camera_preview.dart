@@ -13,7 +13,7 @@ List<String> videoPaths = [];
 
 
 class CameraView extends StatefulWidget {
-  String page;
+  final page;
 
   CameraView(this.page);
 
@@ -23,7 +23,6 @@ class CameraView extends StatefulWidget {
 
 class _CameraViewState extends State<CameraView> {
   bool isVideo = false;
-  bool _isLoading = true;
   bool _isRecording = false;
   CameraLensDirection direction = CameraLensDirection.back;
   late CameraController _cameraController;

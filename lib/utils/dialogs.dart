@@ -29,7 +29,7 @@ void showErrorDialog(context, errorMessage) {
         actions: [
           ElevatedButton(
               onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(primary: Colors.red),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               child: const Text("Ok"))
         ],
       ));
@@ -46,7 +46,7 @@ void showOKDialog(context, message, setState) {
                 Navigator.pop(context);
                 setState();
               },
-              style: ElevatedButton.styleFrom(primary: Colors.green),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
               child: const Text("Ok"))
         ],
       ));
