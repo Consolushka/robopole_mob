@@ -9,6 +9,7 @@ import 'package:robopole_mob/utils/classes.dart';
 import 'dart:convert';
 import 'package:robopole_mob/main.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
+import 'package:robopole_mob/utils/sofrware_handler.dart';
 import 'package:robopole_mob/utils/storageUtils.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -70,7 +71,7 @@ class MapSampleState extends State<MapSample> {
         title: const Text('Замер поля'),
         onTap: () async {
           showLoader(context);
-          var field = await findField(await getUserLocation());
+          var field = await Software.FindFieldByLocation();
           if (field.isEmpty) {
             Navigator.pop(context);
             Navigator.pushAndRemoveUntil(
@@ -101,29 +102,9 @@ class MapSampleState extends State<MapSample> {
         filterPolygonsByPartner(0);
       },
     ));
-    var partnersStorage = await storage.read(key: "Partners");
-    String partnersJson = "";
-    user = User.fromJson(await storage.read(key: "User") as String);
 
-    if (partnersStorage == null) {
-      var part =
-          await http.get(Uri.parse(APIUri.Partner.AvailablePartners), headers: {
-        HttpHeaders.authorizationHeader: user.Token as String,
-      });
-      if (part.statusCode == 200) {
-        partnersJson = part.body;
-        await storage.write(key: "Partners", value: part.body);
-      } else {
-        var error = Error.fromResponse(part);
-        showErrorDialog(context, error);
-      }
-    } else {
-      partnersJson = partnersStorage;
-    }
 
-    var decodedPartners = jsonDecode(partnersJson) as List;
-
-    for (var partner in decodedPartners) {
+    for (var partner in await LocalStorage.Partners()) {
       partnersListTiles.add(ListTile(
         title: Text(partner['name']),
         tileColor: partner['id'].toString() == selectedPartnerId
@@ -137,9 +118,9 @@ class MapSampleState extends State<MapSample> {
   }
 
   Future loadFields() async {
-    user = User.fromJson(await storage.read(key: "User") as String);
+    user = await LocalStorage.User();
     try {
-      fields = await requestForFields();
+      fields = await LocalStorage.Fields();
     } catch (ex) {
       showErrorDialog(context, ex.toString());
     }
@@ -242,11 +223,9 @@ class MapSampleState extends State<MapSample> {
                     leading: const Icon(Icons.logout),
                     title: const Text('Выйти'),
                     onTap: () async {
-                      await storage.delete(key: "User");
+                      await LocalStorage.ClearAll();
                       partners = [];
-                      await storage.delete(key: "Partners");
                       fields = [];
-                      await storage.delete(key: "Fields");
                       Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
@@ -263,23 +242,7 @@ class MapSampleState extends State<MapSample> {
                         partners = [];
                         fields = [];
                         showLoader(context);
-                        await storage.delete(key: "selectedPartnerId");
-                        await storage.delete(key: "Partners");
-                        var availableFields = await http.post(
-                            Uri.parse(APIUri.Field.UpdateFields),
-                            headers: {
-                              HttpHeaders.authorizationHeader:
-                                  user.Token as String,
-                            });
-
-                        if (availableFields.statusCode != 200) {
-                          var error = Error.fromResponse(availableFields);
-                          Navigator.pop(context);
-                          showErrorDialog(context, error);
-                        }
-
-                        await storage.write(
-                            key: "Fields", value: availableFields.body);
+                        await LocalStorage.RestoreData();
                         Navigator.pop(context);
                         setState(() {});
                       }),

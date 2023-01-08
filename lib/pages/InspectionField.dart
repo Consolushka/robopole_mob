@@ -13,6 +13,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:robopole_mob/pages/auth.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:robopole_mob/pages/recorder.dart';
+import 'package:robopole_mob/utils/sofrware_handler.dart';
 import 'package:robopole_mob/utils/storageUtils.dart';
 import 'package:robopole_mob/pages/camera_preview.dart';
 import 'package:flutter_sound/flutter_sound.dart';
@@ -22,7 +23,6 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../utils/APIUri.dart';
-import '../utils/storageUtils.dart' as SU;
 import '../utils/backgroundWorker.dart';
 import '../utils/dialogs.dart';
 
@@ -106,7 +106,7 @@ class _InspectionFieldState extends State<InspectionField> {
     var location = await getUserLocation();
     var fields = List.empty();
     try {
-      fields = await requestForFields();
+      fields = await LocalStorage.Fields();
     } catch (ex) {
       showErrorDialog(context, ex.toString());
     }
@@ -375,7 +375,7 @@ class _InspectionFieldState extends State<InspectionField> {
 
   Future<LatLng> getUserLocation() async {
     Location location = Location();
-    user = User.fromJson(await storage.read(key: "User") as String);
+    user = await LocalStorage.User();
 
     final _locationData = await location.getLocation();
 
@@ -553,7 +553,7 @@ class _InspectionFieldState extends State<InspectionField> {
                           title: const Text('Замер поля'),
                           onTap: () async {
                             showLoader(context);
-                            var field = await SU.findField(await getUserLocation());
+                            var field = await Software.FindFieldByLocation();
                             if (field.isEmpty) {
                               Navigator.pop(context);
                               Navigator.pushAndRemoveUntil(
@@ -579,10 +579,7 @@ class _InspectionFieldState extends State<InspectionField> {
                           leading: const Icon(Icons.logout),
                           title: const Text('Выйти'),
                           onTap: () async {
-                            await storage.delete(key: "User");
-                            await storage.delete(key: "Partners");
-                            await storage.delete(key: "Fields");
-                            await storage.delete(key: "Cultures");
+                            await LocalStorage.ClearAll();
                             Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(
@@ -594,41 +591,8 @@ class _InspectionFieldState extends State<InspectionField> {
                             leading: Icon(Icons.info_outline),
                             title: Text('Обновить данные'),
                             onTap: () async {
-                              var availableFields = await http.post(
-                                  Uri.parse(APIUri.Field.UpdateFields),
-                                  headers: {
-                                    HttpHeaders.authorizationHeader:
-                                        user!.Token as String,
-                                  });
-
-                              if (availableFields.statusCode != 200) {
-                                var error = Error.fromResponse(availableFields);
-                                Navigator.pop(context);
-                                showErrorDialog(context, error);
-                              }
-
-                              await storage.write(
-                                  key: "Fields", value: availableFields.body);
-                              var part = await http.get(
-                                  Uri.parse(APIUri.Partner.AvailablePartners),
-                                  headers: {
-                                    HttpHeaders.authorizationHeader:
-                                        user!.Token as String,
-                                  });
-                              if (part.statusCode == 200) {
-                                await storage.write(
-                                    key: "Partners", value: part.body);
-                              }
-
-                              var response = await http.get(
-                                  Uri.parse(APIUri.Cultures.AllCultures),
-                                  headers: {
-                                    "Authorization": user!.Token as String
-                                  });
-                              if (response.statusCode == 200) {
-                                await storage.write(
-                                    key: "Cultures", value: response.body);
-                              }
+                              showLoader(context);
+                              await LocalStorage.RestoreData();
                               Navigator.pop(context);
                               setState(() {});
                             }),

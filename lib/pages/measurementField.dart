@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:robopole_mob/utils/classes.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/pages/measurementComplete.dart';
 import 'dart:convert';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -23,7 +22,6 @@ class _MeasurementFieldState extends State<MeasurementField> {
   final Set<Polygon> _polygon = Set();
 
   User? user;
-  final storage = FlutterSecureStorage();
 
   StreamSubscription<LocationData>? locationSubscription = null;
 

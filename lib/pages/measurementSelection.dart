@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:robopole_mob/utils/classes.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/pages/fields.dart';
 import 'package:robopole_mob/pages/measurementField.dart';
 import 'package:robopole_mob/pages/passportField.dart';
-import 'package:robopole_mob/utils/storageUtils.dart';
+import 'package:robopole_mob/utils/sofrware_handler.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../utils/dialogs.dart';
@@ -19,7 +18,6 @@ class MeasurementSelection extends StatefulWidget {
 
 class _MeasurementSelectionState extends State<MeasurementSelection> {
   LatLng _userLocation = const LatLng(53.31, 38.1);
-  final storage = const FlutterSecureStorage();
 
   Map currentField = Map();
 
@@ -105,7 +103,7 @@ class _MeasurementSelectionState extends State<MeasurementSelection> {
             ElevatedButton(
                 onPressed: () async {
                   showLoader(context);
-                  var field = await findField(await getUserLocation());
+                  var field = await Software.FindFieldByLocation();
                   if (field.isEmpty) {
                     Navigator.pop(context);
                     setState(() {});

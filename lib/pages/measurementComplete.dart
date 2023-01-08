@@ -13,6 +13,7 @@ import 'package:robopole_mob/pages/measurementField.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:robopole_mob/pages/auth.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:robopole_mob/utils/storageUtils.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../utils/APIUri.dart';
@@ -80,7 +81,7 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
   }
 
   Future getUser() async{
-    user = User.fromJson(await storage.read(key: "User") as String);
+    user = await LocalStorage.User();
   }
 
   Future PostMeasurement(measurement) async {
@@ -390,10 +391,7 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
                         leading: const Icon(Icons.logout),
                         title: const Text('Выйти'),
                         onTap: () async {
-                          await storage.delete(key: "User");
-                          await storage.delete(key: "Partners");
-                          await storage.delete(key: "Fields");
-                          await storage.delete(key: "Cultures");
+                          await LocalStorage.ClearAll();
                           Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
@@ -405,41 +403,8 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
                           leading: Icon(Icons.info_outline),
                           title: Text('Обновить данные'),
                           onTap: () async {
-                            var availableFields = await http.post(
-                                Uri.parse(APIUri.Field.UpdateFields),
-                                headers: {
-                                  HttpHeaders.authorizationHeader:
-                                  user!.Token as String,
-                                });
-
-                            if (availableFields.statusCode != 200) {
-                              var error = Error.fromResponse(availableFields);
-                              Navigator.pop(context);
-                              showErrorDialog(context, error);
-                            }
-
-                            await storage.write(
-                                key: "Fields", value: availableFields.body);
-                            var part = await http.get(
-                                Uri.parse(APIUri.Partner.AvailablePartners),
-                                headers: {
-                                  HttpHeaders.authorizationHeader:
-                                  user!.Token as String,
-                                });
-                            if (part.statusCode == 200) {
-                              await storage.write(
-                                  key: "Partners", value: part.body);
-                            }
-
-                            var response = await http.get(
-                                Uri.parse(APIUri.Cultures.AllCultures),
-                                headers: {
-                                  "Authorization": user!.Token as String
-                                });
-                            if (response.statusCode == 200) {
-                              await storage.write(
-                                  key: "Cultures", value: response.body);
-                            }
+                            showLoader(context);
+                            await LocalStorage.RestoreData();
                             Navigator.pop(context);
                             setState(() {});
                           }),

@@ -14,6 +14,7 @@ import 'package:robopole_mob/pages/recorder.dart';
 import 'package:robopole_mob/pages/camera_preview.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:robopole_mob/pages/auth.dart';
+import 'package:robopole_mob/utils/sofrware_handler.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart' as PH;
@@ -88,27 +89,11 @@ class _InventoryState extends State<Inventory> {
       }
     }
 
-    var culturesStored = await storage.read(key: "Cultures");
-    String culturesJson = "";
-    user = User.fromJson(await storage.read(key: "User") as String);
-    if (culturesStored == null) {
-      var response = await http.get(Uri.parse(APIUri.Cultures.AllCultures),
-          headers: {"Authorization": user!.Token as String});
-      if (response.statusCode == 200) {
-        culturesJson = response.body;
-        await storage.write(key: "Cultures", value: response.body);
-      }
-    } else {
-      culturesJson = culturesStored;
-    }
 
-    List<AgroCulture> availableCultures = [];
-    (jsonDecode(culturesJson) as List).forEach((element) {
-      availableCultures.add(AgroCulture.fromMap(element));
-    });
     culturesItems = [];
 
-    for (int i = 0; i < availableCultures.length - 1; i++) {
+    var availableCultures = await LocalStorage.Cultures();
+    for (int i = 0; i < availableCultures.length; i++) {
       var element = availableCultures[i];
       if (element.ParentID == 0) {
         culturesItems.add(DropdownMenuItem(
@@ -118,25 +103,9 @@ class _InventoryState extends State<Inventory> {
       }
     }
 
-    var partnersStorage = await storage.read(key: "Partners");
+    var availablePartners =await LocalStorage.Partners();
+    for (var partner in availablePartners) {
 
-    if (partnersStorage == null) {
-      var part =
-          await http.get(Uri.parse(APIUri.Partner.AvailablePartners), headers: {
-        HttpHeaders.authorizationHeader: user!.Token as String,
-      });
-      if (part.statusCode == 200) {
-        partnersStorage = part.body;
-        await storage.write(key: "Partners", value: part.body);
-      } else {
-        var error = Error.fromResponse(part);
-        partnersStorage = "[]";
-      }
-    }
-
-    var decodedPartners = jsonDecode(partnersStorage) as List;
-
-    for (var partner in decodedPartners) {
       partnersItems.add(DropdownMenuItem(
         child: Text(partner["name"]),
         value: "${partner["id"]}",
@@ -158,7 +127,7 @@ class _InventoryState extends State<Inventory> {
 
   Future<LatLng> getUserLocation() async {
     if (user == null) {
-      user = User.fromJson(await storage.read(key: "User") as String);
+      user = await LocalStorage.User();
     }
     Location location = Location();
 
@@ -384,7 +353,7 @@ class _InventoryState extends State<Inventory> {
                         ),
                         style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.all(10),
-                            primary: Colors.redAccent,
+                            backgroundColor: Colors.redAccent,
                             shape: CircleBorder()),
                       ),
                       ElevatedButton(
@@ -471,7 +440,7 @@ class _InventoryState extends State<Inventory> {
                           size: 50,
                         ),
                         style: ElevatedButton.styleFrom(
-                            primary: Colors.green,
+                            backgroundColor: Colors.green,
                             padding: EdgeInsets.all(20),
                             shape: CircleBorder()),
                       ),
@@ -512,7 +481,7 @@ class _InventoryState extends State<Inventory> {
                         title: const Text('Замер поля'),
                         onTap: () async {
                           showLoader(context);
-                          var field = await findField(await getUserLocation());
+                          var field = await Software.FindFieldByLocation();
                           if (field.isEmpty) {
                             Navigator.pop(context);
                             Navigator.pushAndRemoveUntil(
@@ -538,10 +507,7 @@ class _InventoryState extends State<Inventory> {
                         leading: const Icon(Icons.logout),
                         title: const Text('Выйти'),
                         onTap: () async {
-                          await storage.delete(key: "User");
-                          await storage.delete(key: "Partners");
-                          await storage.delete(key: "Fields");
-                          await storage.delete(key: "Cultures");
+                          await LocalStorage.ClearAll();
                           Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
@@ -554,41 +520,7 @@ class _InventoryState extends State<Inventory> {
                           title: Text('Обновить данные'),
                           onTap: () async {
                             showLoader(context);
-                            var availableFields = await http.post(
-                                Uri.parse(APIUri.Field.UpdateFields),
-                                headers: {
-                                  HttpHeaders.authorizationHeader:
-                                      user!.Token as String,
-                                });
-
-                            if (availableFields.statusCode != 200) {
-                              var error = Error.fromResponse(availableFields);
-                              Navigator.pop(context);
-                              showErrorDialog(context, error);
-                            }
-
-                            await storage.write(
-                                key: "Fields", value: availableFields.body);
-                            var part = await http.get(
-                                Uri.parse(APIUri.Partner.AvailablePartners),
-                                headers: {
-                                  HttpHeaders.authorizationHeader:
-                                      user!.Token as String,
-                                });
-                            if (part.statusCode == 200) {
-                              await storage.write(
-                                  key: "Partners", value: part.body);
-                            }
-
-                            var response = await http.get(
-                                Uri.parse(APIUri.Cultures.AllCultures),
-                                headers: {
-                                  "Authorization": user!.Token as String
-                                });
-                            if (response.statusCode == 200) {
-                              await storage.write(
-                                  key: "Cultures", value: response.body);
-                            }
+                            await LocalStorage.RestoreData();
                             Navigator.pop(context);
                             setState(() {});
                           }),
@@ -712,7 +644,7 @@ class _InventoryState extends State<Inventory> {
                                               (route) => false);
                                         },
                                         style: ElevatedButton.styleFrom(
-                                            primary: Colors.black45
+                                            backgroundColor: Colors.black45
                                                 .withOpacity(0.26)),
                                         child: const Icon(
                                           Icons.camera_alt_outlined,

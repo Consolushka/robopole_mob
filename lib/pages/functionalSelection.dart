@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:robopole_mob/pages/InspectionField.dart';
 import 'package:robopole_mob/pages/fields.dart';
 import 'package:robopole_mob/pages/inventory.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:permission_handler/permission_handler.dart' as PH;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:robopole_mob/pages/measurementSelection.dart';
 import 'package:robopole_mob/pages/passportField.dart';
-import 'package:robopole_mob/utils/storageUtils.dart';
+import 'package:robopole_mob/utils/sofrware_handler.dart';
 
 import '../utils/dialogs.dart';
 
@@ -19,7 +18,6 @@ class FunctionalPage extends StatefulWidget {
 }
 
 class _FunctionalPageState extends State<FunctionalPage> {
-  final storage = FlutterSecureStorage();
 
   @override
   void initState(){
@@ -65,7 +63,7 @@ class _FunctionalPageState extends State<FunctionalPage> {
                       Navigator.of(context).push(_createRoute(2));
                     },
                     style: ElevatedButton.styleFrom(
-                        primary: Colors.white,
+                        backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10))),
                     child: Container(
@@ -88,7 +86,7 @@ class _FunctionalPageState extends State<FunctionalPage> {
                       Navigator.of(context).push(_createRoute(1));
                     },
                     style: ElevatedButton.styleFrom(
-                        primary: Colors.white,
+                        backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10))),
                     child: Container(
@@ -111,7 +109,7 @@ class _FunctionalPageState extends State<FunctionalPage> {
                       Navigator.of(context).push(_createRoute(3));
                     },
                     style: ElevatedButton.styleFrom(
-                        primary: Colors.white,
+                        backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10))),
                     child: Container(
@@ -132,7 +130,7 @@ class _FunctionalPageState extends State<FunctionalPage> {
                 ElevatedButton(
                     onPressed: () async{
                       showLoader(context);
-                      var field = await findField(await getUserLocation());
+                      var field = await Software.FindFieldByLocation();
                       if(field.isEmpty){
                         Navigator.pop(context);
                         Navigator.pushAndRemoveUntil(
@@ -151,7 +149,7 @@ class _FunctionalPageState extends State<FunctionalPage> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                        primary: Colors.white,
+                        backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10))),
                     child: Container(

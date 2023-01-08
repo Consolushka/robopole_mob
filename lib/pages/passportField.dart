@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:robopole_mob/pages/measurementField.dart';
 import 'package:robopole_mob/pages/measurementSelection.dart';
+import 'package:robopole_mob/utils/storageUtils.dart';
 
 class PassportField extends StatefulWidget {
   int id;
@@ -20,7 +20,6 @@ class PassportField extends StatefulWidget {
 class _PassportFieldState extends State<PassportField> {
   Map<int, List<LatLng>> ass = <int, List<LatLng>>{};
   Map field = Map();
-  final storage = const FlutterSecureStorage();
 
   LatLng currentLatLng = new LatLng(33,33);
   Completer<GoogleMapController> _controller = Completer();
@@ -60,8 +59,7 @@ class _PassportFieldState extends State<PassportField> {
   }
 
   Future<Map<int, List<LatLng>>> fetchPost() async {
-    var fieldsStorage = await storage.read(key: "Fields");
-    var fields = jsonDecode(fieldsStorage as String) as List;
+    var fields = await LocalStorage.Fields();
     Map<int, List<LatLng>> p = <int, List<LatLng>>{};
     for(int i=0;i<fields.length;i++){
       if(fields[i]["id"] ==widget.id){

@@ -1,119 +1,116 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
+import 'package:robopole_mob/utils/classes.dart';
 import 'dart:io';
 
-import 'classes.dart';
+import 'classes.dart' as CL;
 import 'APIUri.dart';
 
-Future<List> getFieldsFromStorage() async {
-  final storage = const FlutterSecureStorage();
-  var fieldsStorage = await storage.read(key: "Fields");
-  var fields = jsonDecode(fieldsStorage as String) as List;
-  return fields;
-}
+class LocalStorage{
+  static final storage = const FlutterSecureStorage();
 
-Future<List> requestForFields() async {
-  final storage = const FlutterSecureStorage();
-  var user = User.fromJson(await storage.read(key: "User") as String);
-
-  var fieldsStorage = await storage.read(key: "Fields");
-  String fieldsJson = "";
-
-  if(fieldsStorage == null){
-    debugPrint("empty storage");
-    var availableFields = await http.get(
-        Uri.parse(APIUri.Field.AvailableFields),
-        headers: {
-          HttpHeaders.authorizationHeader: user.Token as String,
-        }
-    );
-
-    if(availableFields.statusCode != 200){
-      var error = Error.fromResponse(availableFields);
-      throw Exception(error);
-    }
-
-    fieldsJson = availableFields.body;
-    await storage.write(key: "Fields", value: fieldsJson);
-  }
-  else{
-    fieldsJson = fieldsStorage;
+  static Future<CL.User> User () async {
+    return CL.User.fromJson(await storage.read(key: "User") as String);
   }
 
-  return jsonDecode(fieldsJson) as List;
-}
+  static Future<List> Fields() async {
+    var user = await User();
 
-Future<LatLng> getUserLocation() async {
-  Location location = Location();
-  final _locationData = await location.getLocation();
-  return LatLng(_locationData.latitude!, _locationData.longitude!);
-}
+    var fieldsStorage = await storage.read(key: "Fields");
+    String fieldsJson = "";
 
-Future<Map> findField(LatLng userLocation) async {
-  Map currentField = Map();
+    if(fieldsStorage == null){
+      debugPrint("empty storage");
+      var availableFields = await http.get(
+          Uri.parse(APIUri.Field.AvailableFields),
+          headers: {
+            HttpHeaders.authorizationHeader: user.Token as String,
+          }
+      );
 
-  var fields = List.empty();
-  try {
-    fields = await requestForFields();
-  } catch (ex) {
-    throw ex;
-  }
-  bool isFounded = false;
-  for (int i = 0; i < fields.length; i++) {
-    var field = fields[i];
-    bool result = false;
-    var cooooords = [];
-    try {
-      cooooords = jsonDecode(field["coordinates"])[0];
-    } catch (ex) {
-      continue;
-    }
-    List<LatLng> polygonCoords = [];
-    cooooords.forEach((element) {
-      var c = element;
-      double? lat;
-      double? lng;
-      if (element[0] is double) {
-        lat = c[1];
-        lng = c[0];
-        polygonCoords.add(LatLng(c[1], c[0]));
-      } else {
-        c = element[0];
-        lat = c[1];
-        lng = c[0];
-        polygonCoords.add(LatLng(c[1], c[0]));
+      if(availableFields.statusCode != 200){
+        var error = Error.fromResponse(availableFields);
+        throw Exception(error);
       }
-    });
-    var j = polygonCoords.length - 1;
-    for (int i = 0; i < polygonCoords.length; i++) {
-      if ((polygonCoords[i].longitude < userLocation.longitude &&
-          polygonCoords[j].longitude >= userLocation.longitude ||
-          polygonCoords[j].longitude < userLocation.longitude &&
-              polygonCoords[i].longitude >= userLocation.longitude) &&
-          (polygonCoords[i].latitude +
-              (userLocation.longitude - polygonCoords[i].longitude) /
-                  (polygonCoords[j].longitude -
-                      polygonCoords[i].longitude) *
-                  (polygonCoords[j].latitude -
-                      polygonCoords[i].latitude) <
-              userLocation.latitude)) result = !result;
-      j = i;
+
+      fieldsJson = availableFields.body;
+      await storage.write(key: "Fields", value: fieldsJson);
+    }
+    else{
+      fieldsJson = fieldsStorage;
     }
 
-    if (result) {
-      currentField = field;
-      currentField["coords"] = polygonCoords;
-      isFounded = true;
-      // Future.microtask(() => Navigator.push(
-      //     context,
-      //     MaterialPageRoute(builder: (context) => PassportField(currentField["id"]))));
-    }
-
+    return jsonDecode(fieldsJson) as List;
   }
-  return currentField;
+
+  static Future<List> Cultures () async {
+    var user = await User();
+
+    var culturesStored = await storage.read(key: "Cultures");
+    String culturesJson = "";
+    if (culturesStored == null) {
+      var response = await http.get(Uri.parse(APIUri.Cultures.AllCultures),
+          headers: {"Authorization": user.Token as String});
+      if (response.statusCode == 200) {
+        culturesJson = response.body;
+        await storage.write(key: "Cultures", value: response.body);
+      }
+      else{
+          var error = Error.fromResponse(response);
+          throw Exception(error);
+      }
+    } else {
+      culturesJson = culturesStored;
+    }
+
+    List<AgroCulture> availableCultures = [];
+    (jsonDecode(culturesJson) as List).forEach((element) {
+      availableCultures.add(AgroCulture.fromMap(element));
+    });
+
+    return availableCultures;
+  }
+
+  static Future<List> Partners () async {
+    var partnersStorage = await storage.read(key: "Partners");
+    String partnersJson = "";
+    var user = await User();
+
+    if (partnersStorage == null) {
+      var part =
+      await http.get(Uri.parse(APIUri.Partner.AvailablePartners), headers: {
+        HttpHeaders.authorizationHeader: user.Token as String,
+      });
+      if (part.statusCode == 200) {
+        partnersJson = part.body;
+        await storage.write(key: "Partners", value: part.body);
+      } else {
+        var error = Error.fromResponse(part);
+        throw Exception(error.Message);
+      }
+    } else {
+      partnersJson = partnersStorage;
+    }
+
+    return jsonDecode(partnersJson) as List;
+  }
+
+  static Future ClearAll() async {
+    await storage.delete(key: "User");
+    await storage.delete(key: "Partners");
+    await storage.delete(key: "Cultures");
+    await storage.delete(key: "Fields");
+  }
+
+  static Future RestoreData() async {
+    await storage.delete(key: "Partners");
+    await storage.delete(key: "Cultures");
+    await storage.delete(key: "Fields");
+    await Fields();
+    await Cultures();
+    await Partners();
+  }
 }

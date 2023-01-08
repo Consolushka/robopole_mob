@@ -23,24 +23,8 @@ class _AuthState extends State<Auth> {
   String errorMessage = '';
   final storage = const FlutterSecureStorage();
 
-  void showLoader(){
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: const [SpinKitRing(
-            color: Colors.deepOrangeAccent,
-            size: 100,
-          )],
-        );
-      },
-    );
-  }
-
   void auth() async{
+    showLoader(context);
     var response = await http.post(
         Uri.parse(
             '${APIUri.User.Authenticate}'),
@@ -64,18 +48,21 @@ class _AuthState extends State<Auth> {
           await storage.write(key: "Cultures", value: response.body);
         }
 
+        Navigator.pop(context);
         Navigator.pushAndRemoveUntil(context,
             MaterialPageRoute(builder: (context) => const FunctionalPage()), (
                 route) => false);
       }
       else{
         errorMessage = "Нет доступа к мобильному приложению";
+        Navigator.pop(context);
         showErrorDialog(context, errorMessage);
       }
     }
     else{
       var error = Error.fromResponse(response);
       errorMessage = "${error.Message}";
+      Navigator.pop(context);
       showErrorDialog(context, errorMessage);
     }
   }
