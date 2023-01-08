@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
@@ -55,8 +54,6 @@ class InspectionField extends StatefulWidget {
 class _InspectionFieldState extends State<InspectionField> {
   final recorder = FlutterSoundRecorder();
   bool isRecorderReady = false;
-
-  final storage = const FlutterSecureStorage();
 
   Map currentField = Map();
 
@@ -474,9 +471,7 @@ class _InspectionFieldState extends State<InspectionField> {
                                   behavior: SnackBarBehavior.floating,
                                 ),
                               );
-                              if (await storage.read(
-                                      key: "isPostedInspectionsLengthIsNull") ==
-                                  "1") {
+                              if (await LocalStorage.GetBooleanValue("isPostedInspectionsLengthIsNull")) {
                                 insps = [];
                               }
                               insps.add(encoded);
@@ -495,9 +490,7 @@ class _InspectionFieldState extends State<InspectionField> {
                                     "Inspections": e,
                                     "UserToken": user!.Token
                                   });
-                              await storage.write(
-                                  key: "isPostedInspectionsLengthIsNull",
-                                  value: "0");
+                              await LocalStorage.SetFalseValue("isPostedInspectionsLengthIsNull");
                               imagePaths = [];
                               videoPaths = [];
                               audioDuration = "";

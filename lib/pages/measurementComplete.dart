@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 import 'package:robopole_mob/utils/backgroundWorker.dart';
 import 'dart:convert';
 import 'package:robopole_mob/utils/classes.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:robopole_mob/pages/measurementField.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -50,7 +49,6 @@ class MeasurementComplete extends StatefulWidget {
 
 class _MeasurementCompleteState extends State<MeasurementComplete> {
   Map<int, List<LatLng>> ass = <int, List<LatLng>>{};
-  final storage = const FlutterSecureStorage();
 
   LatLng currentLatLng = new LatLng(33, 33);
   double calculatedArea = 0;
@@ -309,9 +307,7 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
                               behavior: SnackBarBehavior.floating,
                             ),
                           );
-                          if (await storage.read(
-                              key: "isPostedMeasurementsLengthIsNull") ==
-                              "1") {
+                          if (await LocalStorage.GetBooleanValue("isPostedMeasurementsLengthIsNull")) {
                             measurements = [];
                           }
                           measurements.add(encoded);
@@ -329,9 +325,7 @@ class _MeasurementCompleteState extends State<MeasurementComplete> {
                                 "Measurements": e,
                                 "UserToken": user!.Token
                               });
-                          await storage.write(
-                              key: "isPostedMeasurementsLengthIsNull",
-                              value: "0");
+                          await LocalStorage.SetFalseValue("isPostedMeasurementsLengthIsNull");
                           setState(() {});
                         }
                       },

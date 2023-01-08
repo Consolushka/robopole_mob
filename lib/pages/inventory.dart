@@ -8,7 +8,6 @@ import 'package:robopole_mob/pages/measurementSelection.dart';
 import 'package:robopole_mob/pages/passportField.dart';
 import 'dart:convert';
 import 'package:robopole_mob/utils/classes.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:robopole_mob/pages/recorder.dart';
 import 'package:robopole_mob/pages/camera_preview.dart';
@@ -66,7 +65,6 @@ class _InventoryState extends State<Inventory> {
   List<DropdownMenuItem<String>> culturesItems = [];
   List<DropdownMenuItem<String>> partnersItems = [];
 
-  final storage = const FlutterSecureStorage();
   LatLng _userLocation = const LatLng(53.31, 38.1);
 
   @override
@@ -403,9 +401,7 @@ class _InventoryState extends State<Inventory> {
                                 // ),
                               ),
                             );
-                            if (await storage.read(
-                                    key: "isPostedInventoriesLengthIsNull") ==
-                                "1") {
+                            if (await LocalStorage.GetBooleanValue("isPostedInventoriesLengthIsNull")) {
                               invs = [];
                             }
                             invs.add(encoded);
@@ -413,7 +409,7 @@ class _InventoryState extends State<Inventory> {
                             var encodedInventories = Map();
                             encodedInventories["invs"] = e;
                             Workmanager().registerOneOffTask(
-                                "${DateTime.now()}", "inventory",
+                                "${DateTime.now().microsecond}", "inventory",
                                 existingWorkPolicy: ExistingWorkPolicy.replace,
                                 tag: "inventory",
                                 constraints: Constraints(
@@ -422,9 +418,7 @@ class _InventoryState extends State<Inventory> {
                                   "Inventory": e,
                                   "UserToken": user!.Token
                                 });
-                            await storage.write(
-                                key: "isPostedInventoriesLengthIsNull",
-                                value: "0");
+                            await LocalStorage.SetFalseValue("isPostedInventoriesLengthIsNull");
                             selCulture = null;
                             imagePaths = [];
                             videoPaths = [];

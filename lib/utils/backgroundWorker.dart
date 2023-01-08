@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:robopole_mob/utils/classes.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:robopole_mob/utils/storageUtils.dart';
 
 import 'APIUri.dart';
 import 'notifications.dart';
@@ -86,8 +86,7 @@ Future backgroundPostInspection(inputData) async {
         body: jsoned);
 
     if (response.statusCode == 200) {
-      final storage = const FlutterSecureStorage();
-      storage.write(key: "isPostedInspectionsLengthIsNull", value: "1");
+      await LocalStorage.SetTrueValue("isPostedInspectionsLengthIsNull");
       await _notificationService.showNotifications(
           "Осмотр поля ${insp.FieldID} от ${insp.Date!.day.toString()}.${insp.Date!.month.toString()}.${insp.Date!.year.toString()} проведен", NotificationService.Inspection);
     } else {
@@ -104,6 +103,7 @@ Future backgroundPostInventory(inputData) async {
   List inentory = jsonDecode(inputData["Inventory"]) as List;
   NotificationService _notificationService = NotificationService();
   var userToken = inputData!["UserToken"] as String;
+
   for (String invetn in inentory) {
     LocationInventory inv = LocationInventory.fromJson(
         jsonDecode(invetn));
@@ -168,8 +168,7 @@ Future backgroundPostInventory(inputData) async {
         body: jsoned);
 
     if (response.statusCode == 200) {
-      final storage = const FlutterSecureStorage();
-      storage.write(key: "isPostedInventoriesLengthIsNull", value: "1");
+      await LocalStorage.SetTrueValue("isPostedInventoriesLengthIsNull");
       await _notificationService.showNotifications(
           "Инвентаризация от ${inv.Date!.day.toString()}.${inv.Date!.month.toString()}.${inv.Date!.year.toString()} пройдена", NotificationService.Inventory);
     } else {
@@ -201,8 +200,7 @@ Future backgroundPostMeasurement(inputData) async {
         body: jsoned);
 
     if (response.statusCode == 200) {
-      final storage = const FlutterSecureStorage();
-      storage.write(key: "isPostedMeasurementsLengthIsNull", value: "1");
+      await LocalStorage.SetTrueValue("isPostedMeasurementsLengthIsNull");
       await _notificationService.showNotifications(
           "Замер поля ${measure.FieldID} от ${measure.Date!.day.toString()}.${measure.Date!.month.toString()}.${measure.Date!.year.toString()} проведен", NotificationService.Measurement);
     } else {

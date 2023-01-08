@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:robopole_mob/utils/classes.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:camera/camera.dart';
 import 'package:robopole_mob/pages/auth.dart';
+import 'package:robopole_mob/utils/classes.dart';
+import 'package:robopole_mob/utils/storageUtils.dart';
 
 import 'utils/notifications.dart';
 
@@ -19,18 +19,15 @@ Future<void> main() async {
   // Obtain a list of the available cameras on the device.
   cameras = await availableCameras();
 
-  final storage = FlutterSecureStorage();
 
-  final userJson = await storage.read(key: "User");
-  debugPrint(userJson);
-  if(userJson != null){
-    var user = User.fromJson(userJson);
+  try{
+    final User user = await LocalStorage.User();
     if(user.ID != 0){
       debugPrint("correct user");
       runApp(Authed());
     }
   }
-  else{
+  catch (Ex){
     runApp(NoAuthed());
   }
   // Get a specific camera from the list of available cameras.

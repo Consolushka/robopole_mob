@@ -3,8 +3,7 @@ import 'package:robopole_mob/utils/classes.dart';
 import 'package:http/http.dart' as http;
 import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:robopole_mob/utils/storageUtils.dart';
 
 import '../utils/APIUri.dart';
 import '../utils/dialogs.dart';
@@ -21,7 +20,6 @@ class _AuthState extends State<Auth> {
   String password = '';
   bool isError = false;
   String errorMessage = '';
-  final storage = const FlutterSecureStorage();
 
   void auth() async{
     showLoader(context);
@@ -36,17 +34,8 @@ class _AuthState extends State<Auth> {
       User user = User.fromJson(response.body);
 
       if (user.MobileAccess as bool) {
-        await storage.write(key: "User", value: user.toJson());
-
-        var response = await http.get(
-            Uri.parse('${APIUri.Cultures.AllCultures}'),
-            headers: {
-              "Authorization": user.Token as String
-            }
-        );
-        if(response.statusCode == 200){
-          await storage.write(key: "Cultures", value: response.body);
-        }
+        await LocalStorage.WriteUser(user);
+        await LocalStorage.Cultures();
 
         Navigator.pop(context);
         Navigator.pushAndRemoveUntil(context,

@@ -16,6 +16,10 @@ class LocalStorage{
     return CL.User.fromJson(await storage.read(key: "User") as String);
   }
 
+  static Future WriteUser(CL.User user) async {
+    await storage.write(key: "User", value: user.toJson());
+  }
+
   static Future<List> Fields() async {
     var user = await User();
 
@@ -112,5 +116,23 @@ class LocalStorage{
     await Fields();
     await Cultures();
     await Partners();
+  }
+
+  static Future<bool> GetBooleanValue (String key) async {
+    return await storage.read(
+        key: key) ==
+        "1";
+  }
+
+  static Future SetTrueValue(String key) async {
+    await storage.write(
+        key: key,
+        value: "1");
+  }
+
+  static Future SetFalseValue (String key) async {
+    await storage.write(
+        key: key,
+        value: "0");
   }
 }

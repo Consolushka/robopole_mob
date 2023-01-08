@@ -1,23 +1,18 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
-import 'package:http/http.dart' as http;
 import 'package:robopole_mob/pages/measurementSelection.dart';
 import 'package:robopole_mob/utils/classes.dart';
 import 'dart:convert';
 import 'package:robopole_mob/main.dart';
 import 'package:robopole_mob/pages/functionalSelection.dart';
 import 'package:robopole_mob/utils/sofrware_handler.dart';
-import 'package:robopole_mob/utils/storageUtils.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:robopole_mob/pages/passportField.dart';
 
-import '../utils/APIUri.dart';
+import '../utils/storageUtils.dart';
 import '../utils/dialogs.dart';
 
 class MapSample extends StatefulWidget {
@@ -29,7 +24,9 @@ class MapSample extends StatefulWidget {
 
 class MapSampleState extends State<MapSample> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final storage = FlutterSecureStorage();
+
+  int selectedPartnerId = 0;
+
   int loadedFiledsPercentage = 0;
   User user = User(0, "", false, 0, "");
   Set<Polygon> _polygons = {};
@@ -43,18 +40,15 @@ class MapSampleState extends State<MapSample> {
 
   void filterPolygonsByPartner(int partnerId) async {
     if (partnerId == 0) {
-      await storage.delete(key: "selectedPartnerId");
+      selectedPartnerId = 0;
     } else {
-      await storage.write(
-          key: "selectedPartnerId", value: partnerId.toString());
+      selectedPartnerId = partnerId;
     }
     partnersListTiles = [];
     setState(() {});
   }
 
   Future loadPartners() async {
-    var selectedPartnerId = await storage.read(key: "selectedPartnerId");
-
     partnersListTiles.add(ListTile(
       leading: const Icon(Icons.alt_route),
       title: const Text('Выбор функционала'),
@@ -95,7 +89,7 @@ class MapSampleState extends State<MapSample> {
     );
     partnersListTiles.add(ListTile(
       title: const Text("Показать все"),
-      tileColor: selectedPartnerId == null
+      tileColor: selectedPartnerId == 0
           ? Colors.deepOrangeAccent.withOpacity(0.5)
           : null,
       onTap: () {
@@ -107,7 +101,7 @@ class MapSampleState extends State<MapSample> {
     for (var partner in await LocalStorage.Partners()) {
       partnersListTiles.add(ListTile(
         title: Text(partner['name']),
-        tileColor: partner['id'].toString() == selectedPartnerId
+        tileColor: partner['id'] == selectedPartnerId
             ? Colors.deepOrangeAccent.withOpacity(0.5)
             : null,
         onTap: () {
@@ -134,14 +128,12 @@ class MapSampleState extends State<MapSample> {
     if (_polygons.isEmpty) {
       await loadFields();
     }
-
-    var selectedPartnerId = await storage.read(key: "selectedPartnerId");
     _polygons = {};
 
     for (int i = 0; i < fields.length; i++) {
       var field = fields[i];
-      if (selectedPartnerId != null) {
-        if (field["usingByPartnerID"].toString() != selectedPartnerId) {
+      if (selectedPartnerId != 0) {
+        if (field["usingByPartnerID"] != selectedPartnerId) {
           continue;
         }
       }
