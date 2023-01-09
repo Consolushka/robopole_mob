@@ -6,6 +6,7 @@ import 'package:robopole_mob/utils/classes.dart';
 import 'package:robopole_mob/pages/measurementComplete.dart';
 import 'dart:convert';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:robopole_mob/utils/sofrware_handler.dart';
 
 class MeasurementField extends StatefulWidget {
   Map? field;
@@ -60,8 +61,7 @@ class _MeasurementFieldState extends State<MeasurementField> {
   }
 
   void _getUserLocation() async {
-    Location location = Location();
-    final _locationData = await location.getLocation();
+    final _locationData = await Software.getUserLocation();
     setState(() {
       _userLocation = LatLng(_locationData.latitude!, _locationData.longitude!);
     });

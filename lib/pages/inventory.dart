@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
 import 'package:robopole_mob/pages/measurementSelection.dart';
 import 'package:robopole_mob/pages/passportField.dart';
@@ -74,19 +73,12 @@ class _InventoryState extends State<Inventory> {
         );
     super.initState();
 
-    initRecorder();
+    _getUserLocation();
   }
 
-  Future initRecorder() async {
-    var check = await PH.Permission.microphone.status;
-    if (check.isDenied) {
-      final status = await PH.Permission.microphone.request();
-      debugPrint(status.toString());
-      if (status != PH.PermissionStatus.granted) {
-        throw 'Microphone permission not granted';
-      }
-    }
-
+  void _getUserLocation() async {
+    final _locationData = await Software.getUserLocation();
+    user = await LocalStorage.User();
 
     culturesItems = [];
 
@@ -101,36 +93,26 @@ class _InventoryState extends State<Inventory> {
       }
     }
 
-    var availablePartners =await LocalStorage.Partners();
+    var availablePartners = await LocalStorage.Partners();
     for (var partner in availablePartners) {
-
       partnersItems.add(DropdownMenuItem(
         child: Text(partner["name"]),
         value: "${partner["id"]}",
       ));
+    }
+    var check = await PH.Permission.microphone.status;
+    if (check.isDenied) {
+      final status = await PH.Permission.microphone.request();
+      debugPrint(status.toString());
+      if (status != PH.PermissionStatus.granted) {
+        throw 'Microphone permission not granted';
+      }
     }
 
     await recorder.openRecorder();
     isRecorderReady = true;
 
     recorder.setSubscriptionDuration(const Duration(milliseconds: 1000));
-  }
-
-  @override
-  void dispose() {
-    recorder.closeRecorder();
-
-    super.dispose();
-  }
-
-  Future<LatLng> getUserLocation() async {
-    if (user == null) {
-      user = await LocalStorage.User();
-    }
-    Location location = Location();
-
-    final _locationData = await location.getLocation();
-    _userLocation = LatLng(_locationData.latitude!, _locationData.longitude!);
 
     List<Container> images = [];
     for (int i = 0; i < imagePaths.length; i++) {
@@ -167,7 +149,17 @@ class _InventoryState extends State<Inventory> {
     imagesRow = Row(
       children: images,
     );
-    return LatLng(_locationData.latitude!, _locationData.longitude!);
+
+    setState(() {
+      _userLocation = LatLng(_locationData.latitude, _locationData.longitude);
+    });
+  }
+
+  @override
+  void dispose() {
+    recorder.closeRecorder();
+
+    super.dispose();
   }
 
   Widget findImage() {
@@ -263,13 +255,17 @@ class _InventoryState extends State<Inventory> {
   }
 
   void resetState() {
-    selCulture = null;
     imagePaths = [];
     videoPaths = [];
-    audioDuration = "";
     audioPath = "";
-    comment = "";
-    setState(() {});
+    setState(() {
+      selCulture = null;
+      imagesRow = Row(
+        children: [],
+      );
+      audioDuration = "";
+      comment = "";
+    });
   }
 
   Widget RecorderButton() {
@@ -317,11 +313,12 @@ class _InventoryState extends State<Inventory> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: getUserLocation(),
-      builder: (ctx, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return Stack(
+    return partnersItems.length == 0
+        ? SpinKitRing(
+            color: Colors.deepOrangeAccent,
+            size: 100,
+          )
+        : Stack(
             children: [
               Scaffold(
                 resizeToAvoidBottomInset: true,
@@ -364,8 +361,8 @@ class _InventoryState extends State<Inventory> {
                             showErrorDialog(context, "Выберете хозяйство");
                             return;
                           }
-                          Location location = Location();
-                          final _locationData = await location.getLocation();
+                          final _locationData =
+                              await Software.getUserLocation();
                           LocationInventory inv = LocationInventory(
                               0,
                               _locationData.latitude!,
@@ -401,7 +398,8 @@ class _InventoryState extends State<Inventory> {
                                 // ),
                               ),
                             );
-                            if (await LocalStorage.GetBooleanValue("isPostedInventoriesLengthIsNull")) {
+                            if (await LocalStorage.GetBooleanValue(
+                                "isPostedInventoriesLengthIsNull")) {
                               invs = [];
                             }
                             invs.add(encoded);
@@ -418,7 +416,8 @@ class _InventoryState extends State<Inventory> {
                                   "Inventory": e,
                                   "UserToken": user!.Token
                                 });
-                            await LocalStorage.SetFalseValue("isPostedInventoriesLengthIsNull");
+                            await LocalStorage.SetFalseValue(
+                                "isPostedInventoriesLengthIsNull");
                             selCulture = null;
                             imagePaths = [];
                             videoPaths = [];
@@ -658,22 +657,5 @@ class _InventoryState extends State<Inventory> {
               ),
             ],
           );
-        } else {
-          return Scaffold(
-            backgroundColor: Colors.white,
-            body: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: const [
-                SpinKitRing(
-                  color: Colors.deepOrangeAccent,
-                  size: 100,
-                )
-              ],
-            ),
-          );
-        }
-      },
-    );
   }
 }
