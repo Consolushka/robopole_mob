@@ -42,7 +42,8 @@ void backgroundDispatcher() {
 
 String? selCulture = null;
 String? selPartner = null;
-String comment = "";
+String? comment = null;
+
 List<String> invs = [];
 
 class Inventory extends StatefulWidget {
@@ -58,7 +59,6 @@ class _InventoryState extends State<Inventory> {
 
   User? user;
 
-  String? selectedValue = null;
   Row? imagesRow = null;
 
   List<DropdownMenuItem<String>> culturesItems = [];
@@ -258,13 +258,13 @@ class _InventoryState extends State<Inventory> {
     imagePaths = [];
     videoPaths = [];
     audioPath = "";
+    comment = null;
     setState(() {
       selCulture = null;
       imagesRow = Row(
         children: [],
       );
       audioDuration = "";
-      comment = "";
     });
   }
 
@@ -313,6 +313,7 @@ class _InventoryState extends State<Inventory> {
 
   @override
   Widget build(BuildContext context) {
+    var c = comment;
     return partnersItems.length == 0
         ? SpinKitRing(
             color: Colors.deepOrangeAccent,
@@ -333,14 +334,7 @@ class _InventoryState extends State<Inventory> {
                     children: [
                       ElevatedButton(
                         onPressed: () {
-                          selCulture = null;
-                          selPartner = null;
-                          imagePaths = [];
-                          videoPaths = [];
-                          audioDuration = "";
-                          audioPath = "";
-                          comment = "";
-                          setState(() {});
+                          resetState();
                         },
                         child: Icon(
                           Icons.delete,
@@ -423,7 +417,7 @@ class _InventoryState extends State<Inventory> {
                             videoPaths = [];
                             audioDuration = "";
                             audioPath = "";
-                            comment = "";
+                            comment = null;
                             // Navigator.pop(context);
                             setState(() {});
                           }
@@ -602,7 +596,7 @@ class _InventoryState extends State<Inventory> {
                             TextFormField(
                               maxLines: null,
                               textInputAction: TextInputAction.go,
-                              initialValue: comment,
+                              initialValue: comment==null?"":comment,
                               style: const TextStyle(fontSize: 16),
                               decoration: const InputDecoration(
                                 hintText: "Комментарий",
