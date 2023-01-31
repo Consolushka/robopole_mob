@@ -1,6 +1,15 @@
 import 'dart:convert';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+class FieldCoords {
+  int ID;
+  int PartnerId;
+  int LayerId;
+  List<LatLng> Coords;
+
+  FieldCoords(this.ID, this.PartnerId, this.LayerId, this.Coords);
+}
+
 class User {
   int? ID;
   String? Name;

@@ -35,16 +35,10 @@ class _MeasurementFieldState extends State<MeasurementField> {
       List<LatLng> polygonCoords = [];
       cooooords.forEach((element) {
         var c = element;
-        double? lat;
-        double? lng;
         if (element[0] is double) {
-          lat = c[1];
-          lng = c[0];
           polygonCoords.add(LatLng(c[1], c[0]));
         } else {
           c = element[0];
-          lat = c[1];
-          lng = c[0];
           polygonCoords.add(LatLng(c[1], c[0]));
         }
       });
@@ -63,7 +57,7 @@ class _MeasurementFieldState extends State<MeasurementField> {
   void _getUserLocation() async {
     final _locationData = await Software.getUserLocation();
     setState(() {
-      _userLocation = LatLng(_locationData.latitude!, _locationData.longitude!);
+      _userLocation = LatLng(_locationData.latitude, _locationData.longitude);
     });
   }
 

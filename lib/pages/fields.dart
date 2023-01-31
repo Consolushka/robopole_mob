@@ -29,7 +29,8 @@ class MapSampleState extends State<MapSample> {
 
   int loadedFiledsPercentage = 0;
   User user = User(0, "", false, 0, "");
-  Set<Polygon> _polygons = {};
+  Set<FieldCoords> _allPolygons = {};
+  Set<Polygon> _activePolygons = {};
   List fields = [];
   List partners = [];
   List<ListTile> partnersListTiles = [];
@@ -38,13 +39,109 @@ class MapSampleState extends State<MapSample> {
   double lowest = 0.0;
   double leftest = 0.0;
 
+  @override
+  void initState(){
+    createPolygons();
+
+    super.initState();
+  }
+
   void filterPolygonsByPartner(int partnerId) async {
     if (partnerId == 0) {
       selectedPartnerId = 0;
     } else {
       selectedPartnerId = partnerId;
     }
+
     partnersListTiles = [];
+
+    partnersListTiles.add(ListTile(
+      leading: const Icon(Icons.alt_route),
+      title: const Text('Выбор функционала'),
+      onTap: () {
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const FunctionalPage()),
+                (route) => false);
+      },
+    ));
+    partnersListTiles.add(
+      ListTile(
+        leading: const Icon(FontAwesomeIcons.rulerCombined),
+        title: const Text('Замер поля'),
+        onTap: () async {
+          showLoader(context);
+          var field = await Software.FindFieldByLocation();
+          if (field.isEmpty) {
+            Navigator.pop(context);
+            Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const MeasurementSelection()),
+                    (route) => false);
+          } else {
+            Navigator.pop(context);
+            Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => PassportField(
+                      id: field["id"],
+                      isMeasurement: true,
+                    )),
+                    (route) => true);
+          }
+        },
+      ),
+    );
+    partnersListTiles.add(ListTile(
+      title: const Text("Показать все"),
+      tileColor: selectedPartnerId == 0
+          ? Colors.deepOrangeAccent.withOpacity(0.5)
+          : null,
+      onTap: () {
+        filterPolygonsByPartner(0);
+      },
+    ));
+    for (var partner in await LocalStorage.Partners()) {
+      partnersListTiles.add(ListTile(
+        title: Text(partner['name']),
+        tileColor: partner['id'] == selectedPartnerId
+            ? Colors.deepOrangeAccent.withOpacity(0.5)
+            : null,
+        onTap: () {
+          filterPolygonsByPartner(partner['id']);
+        },
+      ));
+    }
+
+    _activePolygons = {};
+    _allPolygons.forEach((field) {
+      if(field.PartnerId==selectedPartnerId || selectedPartnerId==0){
+        var color = Color(0xffffb74d);
+        var zIndex = 3;
+        switch(field.LayerId){
+          case 1:
+            color = Colors.white70;
+            zIndex = 1;
+            break;
+          case 3:
+            color = Color(0xffd50000);
+            zIndex = 3;
+            break;
+        }
+        _activePolygons.add(
+            Polygon(
+              polygonId: PolygonId('${field.ID}'),
+              points: field.Coords,
+              strokeWidth: 1,
+              strokeColor: color,
+              fillColor: color.withOpacity(0.5),
+              consumeTapEvents: true,
+              zIndex: zIndex
+            )
+        );
+      }
+    });
     setState(() {});
   }
 
@@ -120,155 +217,175 @@ class MapSampleState extends State<MapSample> {
     }
   }
 
-  Future<Set<Polygon>> createPolygons() async {
+  void createPolygons() async {
     if (partnersListTiles.length <= 2) {
       await loadPartners();
     }
 
-    if (_polygons.isEmpty) {
+    if (_allPolygons.isEmpty) {
       await loadFields();
     }
-    _polygons = {};
+    Set<FieldCoords> localPolygons = {};
 
     for (int i = 0; i < fields.length; i++) {
       var field = fields[i];
-      if (selectedPartnerId != 0) {
-        if (field["usingByPartnerID"] != selectedPartnerId) {
-          continue;
-        }
-      }
       try {
         var utfed = field["coordinates"];
         var cors = jsonDecode(utfed) as List;
         var cooooords = cors[0];
+        if(cooooords.length==1){
+          cooooords = cooooords[0];
+        }
         List<LatLng> polygonCoords = [];
         cooooords.forEach((element) {
           var c = element;
-          double? lat;
-          double? lng;
           if (element[0] is double) {
-            lat = c[1];
-            lng = c[0];
             polygonCoords.add(LatLng(c[1], c[0]));
           } else {
             c = element[0];
-            lat = c[1];
-            lng = c[0];
             polygonCoords.add(LatLng(c[1], c[0]));
           }
         });
-        var poly = Polygon(
-            polygonId: PolygonId('${field["id"]}'),
-            points: polygonCoords,
-            strokeWidth: 1,
-            strokeColor: Colors.deepOrangeAccent,
-            fillColor: Colors.amberAccent.withOpacity(0.5),
-            consumeTapEvents: true,
-            onTap: () {
-              Navigator.of(context).push(_createRoute(field["id"]));
-            });
-        _polygons.add(poly);
+
+        var fieldCoord = new FieldCoords(field["id"], field["partnerID"], field["layerID"], polygonCoords);
+        switch(field["layerID"]){
+          case 1:
+            fieldCoord.Coords.add(fieldCoord.Coords[0]);
+            localPolygons.add(fieldCoord);
+            _activePolygons.add(Polygon(
+              polygonId: PolygonId('${field["id"]}'),
+              points: polygonCoords,
+              strokeWidth: 1,
+              strokeColor: Colors.white60,
+              fillColor: Colors.white60.withOpacity(0.5),
+              consumeTapEvents: true,
+              zIndex: 1
+            ));
+            break;
+          case 2:
+            localPolygons.add(fieldCoord);
+            _activePolygons.add(Polygon(
+                polygonId: PolygonId('${field["id"]}'),
+                points: polygonCoords,
+                strokeWidth: 1,
+                strokeColor: Color(0xffffb74d),
+                fillColor: Color(0xffffb74d).withOpacity(0.5),
+                consumeTapEvents: true,
+                zIndex: 3,
+                onTap: () {
+                  Navigator.of(context).push(_createRoute(field["id"]));
+                }));
+            break;
+          case 3:
+            localPolygons.add(fieldCoord);
+            _activePolygons.add(Polygon(
+                polygonId: PolygonId('${field["id"]}'),
+                points: polygonCoords,
+                strokeWidth: 1,
+                strokeColor: Colors.red,
+                fillColor: Colors.red.withOpacity(0.5),
+                consumeTapEvents: true,
+                zIndex: 2
+            ));
+            break;
+          default:
+            continue;
+        }
       } catch (e) {
         debugPrint("Caused error with field ${field["id"]}. ${e.toString()}");
       }
     }
-
-    return _polygons;
+    //TODO: ON RELOADING BY PARTNERS - ADD LISTENER ON CLICK
+    setState(() {
+      _allPolygons = localPolygons;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    Future<Set<Polygon>> polys = createPolygons();
-
-    return FutureBuilder(
-      future: polys,
-      builder: (ctx, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return Scaffold(
-            key: _scaffoldKey,
-            appBar: AppBar(
-              title: Text("Робополе 2022"),
-              backgroundColor: Colors.deepOrangeAccent,
-            ),
-            drawer: Drawer(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: <Widget>[
-                  DrawerHeader(
-                      decoration: const BoxDecoration(
-                        color: Colors.deepOrangeAccent,
-                      ),
-                      child: Container(
-                        alignment: Alignment.bottomLeft,
-                        child: Text(
-                          '${user.Name}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                          ),
-                        ),
-                      )),
-                  Column(
-                    children: List.unmodifiable(partnersListTiles),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.logout),
-                    title: const Text('Выйти'),
-                    onTap: () async {
-                      await LocalStorage.ClearAll();
-                      partners = [];
-                      fields = [];
-                      Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const NoAuthed()),
-                          (route) => false);
-                    },
-                  ),
-                  ListTile(
-                      leading: Icon(Icons.restore_from_trash),
-                      title: Text('Обновить данные'),
-                      onTap: () async {
-                        partnersListTiles = [];
-                        _polygons = {};
-                        partners = [];
-                        fields = [];
-                        showLoader(context);
-                        await LocalStorage.RestoreData();
-                        Navigator.pop(context);
-                        setState(() {});
-                      }),
-                ],
-              ),
-            ),
-            body: GoogleMap(
-              polygons: _polygons,
-              mapType: MapType.hybrid,
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true,
-              zoomControlsEnabled: true,
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(54.8561, 38.2930),
-                zoom: 10.0,
-              ),
-            ),
-          );
-        } else {
-          return Scaffold(
-            backgroundColor: Colors.white,
-            body: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: const [
-                SpinKitRing(
+    if(_allPolygons.isEmpty){
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: const [
+            SpinKitRing(
+              color: Colors.deepOrangeAccent,
+              size: 100,
+            )
+          ],
+        ),
+      );
+    }
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        title: Text("Робополе 2022"),
+        backgroundColor: Colors.deepOrangeAccent,
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+                decoration: const BoxDecoration(
                   color: Colors.deepOrangeAccent,
-                  size: 100,
-                )
-              ],
+                ),
+                child: Container(
+                  alignment: Alignment.bottomLeft,
+                  child: Text(
+                    '${user.Name}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                    ),
+                  ),
+                )),
+            Column(
+              children: List.unmodifiable(partnersListTiles),
             ),
-          );
-        }
-      },
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Выйти'),
+              onTap: () async {
+                await LocalStorage.ClearAll();
+                partners = [];
+                fields = [];
+                Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const NoAuthed()),
+                        (route) => false);
+              },
+            ),
+            ListTile(
+                leading: Icon(Icons.restore_from_trash),
+                title: Text('Обновить данные'),
+                onTap: () async {
+                  partnersListTiles = [];
+                  _allPolygons = {};
+                  partners = [];
+                  fields = [];
+                  showLoader(context);
+                  await LocalStorage.RestoreData();
+                  Navigator.pop(context);
+                  setState(() {});
+                }),
+          ],
+        ),
+      ),
+      body: GoogleMap(
+        polygons: _activePolygons,
+        mapType: MapType.hybrid,
+        myLocationEnabled: true,
+        myLocationButtonEnabled: true,
+        zoomControlsEnabled: true,
+        initialCameraPosition: const CameraPosition(
+          target: LatLng(54.8561, 38.2930),
+          zoom: 10.0,
+        ),
+      ),
     );
   }
 }
