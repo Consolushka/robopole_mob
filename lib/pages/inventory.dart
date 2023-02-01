@@ -88,7 +88,7 @@ class _InventoryState extends State<Inventory> {
       if (element.ParentID == 0) {
         culturesItems.add(DropdownMenuItem(
           child: Text(element.Name!),
-          value: "${element.ID}",
+          value: "${element.Id}",
         ));
       }
     }
@@ -313,7 +313,6 @@ class _InventoryState extends State<Inventory> {
 
   @override
   Widget build(BuildContext context) {
-    var c = comment;
     return partnersItems.length == 0
         ? SpinKitRing(
             color: Colors.deepOrangeAccent,
@@ -359,8 +358,8 @@ class _InventoryState extends State<Inventory> {
                               await Software.getUserLocation();
                           LocationInventory inv = LocationInventory(
                               0,
-                              _locationData.latitude!,
-                              _locationData.longitude!,
+                              _locationData.latitude,
+                              _locationData.longitude,
                               int.parse(selCulture!),
                               int.parse(selPartner!),
                               comment,

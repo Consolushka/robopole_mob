@@ -1,13 +1,94 @@
 import 'dart:convert';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class FieldCoords {
-  int ID;
-  int PartnerId;
-  int LayerId;
-  List<LatLng> Coords;
+class Field {
+  late int LogId;
+  late int LogYear;
+  late int Id;
+  late int PartnerId;
+  late int UsingByPartnerId;
+  late String PartnerName;
+  late String UsingByPartnerName;
+  late int LayerId;
+  late String Name;
+  late List<LatLng> Coords;
+  late String KadastrNumber;
+  late String ExternalName;
+  late String GeoMesto;
+  late String GeoStatus;
+  late String GeoUsage;
+  late String? GeoAction;
+  late String GeoNote;
+  late int AgroCultureId;
+  late String AgroCultureName;
+  late String PrevAgroCultureName;
+  late bool IsActive;
+  late double AgroSize;
+  late double MapSize;
+  late double CalculatedArea;
+  late int KadastrFieldId;
+  late int ForeignId;
+  late String MapCenter;
+  late String MapDate;
+  late String LastUpdate;
+  late int UserId;
 
-  FieldCoords(this.ID, this.PartnerId, this.LayerId, this.Coords);
+  List? Works;
+  List? DateSnapshots;
+  List? Inspections;
+  List? Measurements;
+
+  Field(this.Id, this.PartnerId, this.LayerId, this.Coords);
+
+  Field.fromJson(Map<String, dynamic> parsed){
+
+    LogId = parsed["logID"];
+    LogYear = int.parse(parsed["logYear"]);
+    Id = parsed["id"];
+    PartnerId = parsed["partnerID"];
+    UsingByPartnerId = parsed["usingByPartnerID"];
+    PartnerName = parsed["partnerName"];
+    UsingByPartnerName = parsed["usingByPartnerName"];
+    LayerId = parsed["layerID"];
+    Name = parsed["name"];
+    KadastrNumber = parsed["kadastrNumber"];
+    ExternalName = parsed["externalName"];
+    GeoMesto = parsed["geoMesto"];
+    GeoStatus = parsed["geoStatus"];
+    GeoUsage = parsed["geoUsage"];
+    GeoAction = parsed["geoAction"];
+    GeoNote = parsed["geoNote"];
+    AgroCultureId = parsed["agroCultureID"];
+    AgroCultureName = parsed["agroCultureName"];
+    PrevAgroCultureName = parsed["prevAgroCultureName"];
+    IsActive = parsed["isActive"];
+    AgroSize = parsed["agroSize"];
+    MapSize = parsed["mapSize"];
+    CalculatedArea = parsed["calculatedArea"];
+    KadastrFieldId = parsed["kadastrFieldID"];
+    ForeignId = parsed["foreignID"];
+    MapCenter = parsed["mapCenter"];
+    MapDate = parsed["mapDate"];
+    LastUpdate = parsed["lastUpdate"];
+    UserId = parsed["userID"];
+
+    var utfed = parsed["coordinates"];
+    var cors = jsonDecode(utfed) as List;
+    var cooooords = cors[0];
+    if(cooooords.length==1){
+      cooooords = cooooords[0];
+    }
+    Coords = [];
+    cooooords.forEach((element) {
+      var c = element;
+      if (element[0] is double) {
+        Coords.add(LatLng(c[1], c[0]));
+      } else {
+        c = element[0];
+        Coords.add(LatLng(c[1], c[0]));
+      }
+    });
+  }
 }
 
 class User {
