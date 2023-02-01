@@ -20,7 +20,7 @@ class MapSample extends StatefulWidget {
   @override
   State<MapSample> createState() => MapSampleState();
 }
-//TODO: RESTORING DATA
+
 class MapSampleState extends State<MapSample> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -32,7 +32,6 @@ class MapSampleState extends State<MapSample> {
   Set<Polygon> _activePolygons = {};
   List fields = [];
   List partners = [];
-  List<ListTile> partnersListTiles = [];
   late final List<Widget> staticTopDrawerActions = [];
   late final List<ListTile> staticBottomDrawerActions = [];
   double highest = 0.0;
@@ -40,10 +39,10 @@ class MapSampleState extends State<MapSample> {
   double lowest = 0.0;
   double leftest = 0.0;
 
-  var activeLayers = [1,2,3];
+  var activeLayers = [1, 2, 3];
 
   @override
-  void initState(){
+  void initState() {
     staticTopDrawerActions.addAll([
       ListTile(
         leading: const Icon(Icons.alt_route),
@@ -52,7 +51,7 @@ class MapSampleState extends State<MapSample> {
           Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const FunctionalPage()),
-                  (route) => false);
+              (route) => false);
         },
       ),
       ListTile(
@@ -67,22 +66,21 @@ class MapSampleState extends State<MapSample> {
                 context,
                 MaterialPageRoute(
                     builder: (context) => const MeasurementSelection()),
-                    (route) => false);
+                (route) => false);
           } else {
             Navigator.pop(context);
             Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(
                     builder: (context) => PassportField(
-                      id: field["id"],
-                      isMeasurement: true,
-                    )),
-                    (route) => true);
+                          id: field["id"],
+                          isMeasurement: true,
+                        )),
+                (route) => true);
           }
         },
       ),
-    ]
-    );
+    ]);
 
     staticBottomDrawerActions.addAll([
       ListTile(
@@ -94,16 +92,14 @@ class MapSampleState extends State<MapSample> {
           fields = [];
           Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(
-                  builder: (context) => const NoAuthed()),
-                  (route) => false);
+              MaterialPageRoute(builder: (context) => const NoAuthed()),
+              (route) => false);
         },
       ),
       ListTile(
           leading: Icon(Icons.restore_from_trash),
           title: Text('Обновить данные'),
           onTap: () async {
-            partnersListTiles = [];
             _allPolygons = {};
             partners = [];
             fields = [];
@@ -118,40 +114,16 @@ class MapSampleState extends State<MapSample> {
   }
 
   void filterFields() async {
-    partnersListTiles = [];
-    partnersListTiles.add(ListTile(
-      title: const Text("Показать все"),
-      tileColor: selectedPartnerId == 0
-          ? Colors.deepOrangeAccent.withOpacity(0.5)
-          : null,
-      onTap: () {
-        selectedPartnerId = 0;
-        filterFields();
-      },
-    ));
-    for (var partner in await LocalStorage.Partners()) {
-      partnersListTiles.add(ListTile(
-        title: Text(partner['name']),
-        tileColor: partner['id'] == selectedPartnerId
-            ? Colors.deepOrangeAccent.withOpacity(0.5)
-            : null,
-        onTap: () {
-          selectedPartnerId = partner['id'];
-          filterFields();
-        },
-      ));
-    }
-
     _activePolygons = {};
-    for(int i=0; i<_allPolygons.length; i++){
+    for (int i = 0; i < _allPolygons.length; i++) {
       var field = _allPolygons.elementAt(i);
-      if(!activeLayers.contains(field.LayerId)){
+      if (!activeLayers.contains(field.LayerId)) {
         continue;
       }
-      if(field.PartnerId==selectedPartnerId || selectedPartnerId==0){
+      if (field.PartnerId == selectedPartnerId || selectedPartnerId == 0) {
         var color = Color(0xffffb74d);
         var zIndex = 3;
-        switch(field.LayerId){
+        switch (field.LayerId) {
           case 1:
             color = Colors.white70;
             zIndex = 1;
@@ -161,51 +133,29 @@ class MapSampleState extends State<MapSample> {
             zIndex = 3;
             break;
         }
-        _activePolygons.add(
-            Polygon(
-                polygonId: PolygonId('${field.Id}'),
-                points: field.Coords,
-                strokeWidth: 1,
-                strokeColor: color,
-                fillColor: color.withOpacity(0.5),
-                consumeTapEvents: true,
-                zIndex: zIndex,
-                onTap: () {
-                  if(field.LayerId==2){
-                    Navigator.of(context).push(_createRoute(field.Id));
-                  }
-                }
-            )
-        );
+        _activePolygons.add(Polygon(
+            polygonId: PolygonId('${field.Id}'),
+            points: field.Coords,
+            strokeWidth: 1,
+            strokeColor: color,
+            fillColor: color.withOpacity(0.5),
+            consumeTapEvents: true,
+            zIndex: zIndex,
+            onTap: () {
+              if (field.LayerId == 2) {
+                Navigator.of(context).push(_createRoute(field.Id));
+              }
+            }));
       }
     }
     setState(() {});
   }
 
   Future loadPartners() async {
-    partnersListTiles.add(ListTile(
-      title: const Text("Показать все"),
-      tileColor: selectedPartnerId == 0
-          ? Colors.deepOrangeAccent.withOpacity(0.5)
-          : null,
-      onTap: () {
-        selectedPartnerId = 0;
-        filterFields();
-      },
-    ));
-
+    partners.add({"id": 0, "name": "Показать все"});
 
     for (var partner in await LocalStorage.Partners()) {
-      partnersListTiles.add(ListTile(
-        title: Text(partner['name']),
-        tileColor: partner['id'] == selectedPartnerId
-            ? Colors.deepOrangeAccent.withOpacity(0.5)
-            : null,
-        onTap: () {
-          selectedPartnerId = partner['id'];
-          filterFields();
-        },
-      ));
+      partners.add({"id": partner['id'], "name": partner['name']});
     }
   }
 
@@ -219,9 +169,7 @@ class MapSampleState extends State<MapSample> {
   }
 
   void createPolygons() async {
-    if (partnersListTiles.length <= 2) {
-      await loadPartners();
-    }
+    await loadPartners();
 
     if (_allPolygons.isEmpty) {
       await loadFields();
@@ -232,18 +180,17 @@ class MapSampleState extends State<MapSample> {
       var fieldJson = fields[i];
       try {
         var field = Field.fromJson(fieldJson);
-        switch(fieldJson["layerID"]){
+        switch (fieldJson["layerID"]) {
           case 1:
             localFields.add(field);
             _activePolygons.add(Polygon(
-              polygonId: PolygonId('${field.Id}'),
-              points: field.Coords,
-              strokeWidth: 1,
-              strokeColor: Colors.white60,
-              fillColor: Colors.white60.withOpacity(0.5),
-              consumeTapEvents: true,
-              zIndex: 1
-            ));
+                polygonId: PolygonId('${field.Id}'),
+                points: field.Coords,
+                strokeWidth: 1,
+                strokeColor: Colors.white60,
+                fillColor: Colors.white60.withOpacity(0.5),
+                consumeTapEvents: true,
+                zIndex: 1));
             break;
           case 2:
             localFields.add(field);
@@ -268,14 +215,14 @@ class MapSampleState extends State<MapSample> {
                 strokeColor: Colors.red,
                 fillColor: Colors.red.withOpacity(0.5),
                 consumeTapEvents: true,
-                zIndex: 2
-            ));
+                zIndex: 2));
             break;
           default:
             continue;
         }
       } catch (e) {
-        debugPrint("Caused error with field ${fieldJson["id"]}. ${e.toString()}");
+        debugPrint(
+            "Caused error with field ${fieldJson["id"]}. ${e.toString()}");
       }
     }
     setState(() {
@@ -285,7 +232,7 @@ class MapSampleState extends State<MapSample> {
 
   @override
   Widget build(BuildContext context) {
-    if(_allPolygons.isEmpty){
+    if (_allPolygons.isEmpty) {
       createPolygons();
       return Scaffold(
         backgroundColor: Colors.white,
@@ -336,9 +283,9 @@ class MapSampleState extends State<MapSample> {
                   Switch(
                       value: activeLayers.contains(1),
                       activeColor: Colors.deepOrangeAccent,
-                      onChanged: (value){
+                      onChanged: (value) {
                         setState(() {
-                          if(value)
+                          if (value)
                             activeLayers.add(1);
                           else
                             activeLayers.remove(1);
@@ -350,7 +297,7 @@ class MapSampleState extends State<MapSample> {
               ),
               onTap: () {
                 setState(() {
-                  if(!activeLayers.contains(1))
+                  if (!activeLayers.contains(1))
                     activeLayers.add(1);
                   else
                     activeLayers.remove(1);
@@ -367,9 +314,9 @@ class MapSampleState extends State<MapSample> {
                   Switch(
                       value: activeLayers.contains(2),
                       activeColor: Colors.deepOrangeAccent,
-                      onChanged: (value){
+                      onChanged: (value) {
                         setState(() {
-                          if(value)
+                          if (value)
                             activeLayers.add(2);
                           else
                             activeLayers.remove(2);
@@ -381,7 +328,7 @@ class MapSampleState extends State<MapSample> {
               ),
               onTap: () {
                 setState(() {
-                  if(!activeLayers.contains(2))
+                  if (!activeLayers.contains(2))
                     activeLayers.add(2);
                   else
                     activeLayers.remove(2);
@@ -389,7 +336,8 @@ class MapSampleState extends State<MapSample> {
                   filterFields();
                 });
               },
-            ),ListTile(
+            ),
+            ListTile(
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -397,9 +345,9 @@ class MapSampleState extends State<MapSample> {
                   Switch(
                       value: activeLayers.contains(3),
                       activeColor: Colors.deepOrangeAccent,
-                      onChanged: (value){
+                      onChanged: (value) {
                         setState(() {
-                          if(value)
+                          if (value)
                             activeLayers.add(3);
                           else
                             activeLayers.remove(3);
@@ -411,7 +359,7 @@ class MapSampleState extends State<MapSample> {
               ),
               onTap: () {
                 setState(() {
-                  if(!activeLayers.contains(3))
+                  if (!activeLayers.contains(3))
                     activeLayers.add(3);
                   else
                     activeLayers.remove(3);
@@ -420,9 +368,19 @@ class MapSampleState extends State<MapSample> {
                 });
               },
             ),
-            Column(
-              children: List.unmodifiable(partnersListTiles),
-            ),
+            Column(children: [
+              for (Map partner in partners)
+                ListTile(
+                  title: Text(partner['name']),
+                  tileColor: partner['id'] == selectedPartnerId
+                      ? Colors.deepOrangeAccent.withOpacity(0.5)
+                      : null,
+                  onTap: () {
+                    selectedPartnerId = partner['id'];
+                    filterFields();
+                  },
+                )
+            ]),
             Column(
               children: staticBottomDrawerActions,
             )

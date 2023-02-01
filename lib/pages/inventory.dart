@@ -88,7 +88,7 @@ class _InventoryState extends State<Inventory> {
       if (element.ParentID == 0) {
         culturesItems.add(DropdownMenuItem(
           child: Text(element.Name!),
-          value: "${element.Id}",
+          value: "${element.ID}",
         ));
       }
     }
