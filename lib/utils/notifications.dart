@@ -43,23 +43,16 @@ class NotificationService {
     final AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('icon');
 
-    final IOSInitializationSettings initializationSettingsIOS =
-        IOSInitializationSettings(
-      requestSoundPermission: false,
-      requestBadgePermission: false,
-      requestAlertPermission: false,
-    );
-
     final InitializationSettings initializationSettings =
         InitializationSettings(
             android: initializationSettingsAndroid,
-            iOS: initializationSettingsIOS,
+            iOS: null,
             macOS: null);
 
     tz.initializeTimeZones();
 
     await flutterLocalNotificationsPlugin.initialize(initializationSettings,
-        onSelectNotification: selectNotification);
+        onDidReceiveNotificationResponse: recieveNotification);
   }
 
   Future<void> showNotifications(message, AndroidNotificationDetails details) async {
@@ -93,6 +86,6 @@ class NotificationService {
   }
 }
 
-void selectNotification(String? payload) async {
+void recieveNotification(NotificationResponse? response) async {
   //handle your logic here
 }

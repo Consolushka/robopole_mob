@@ -50,6 +50,30 @@ class LocalStorage{
     return jsonDecode(fieldsJson) as List;
   }
 
+  static Future<List> UpdateFields() async {
+    var user = await User();
+
+    var fieldsStorage = await storage.read(key: "Fields");
+    String fieldsJson = "";
+
+    var availableFields = await http.post(
+        Uri.parse(APIUri.Field.UpdateFields),
+        headers: {
+          HttpHeaders.authorizationHeader: user.Token as String,
+        }
+    );
+
+    if(availableFields.statusCode != 200){
+      var error = Error.fromResponse(availableFields);
+      throw Exception(error);
+    }
+
+    fieldsJson = availableFields.body;
+    await storage.write(key: "Fields", value: fieldsJson);
+
+    return jsonDecode(fieldsJson) as List;
+  }
+
   static Future<List> Cultures () async {
     var user = await User();
 
@@ -113,7 +137,7 @@ class LocalStorage{
     await storage.delete(key: "Partners");
     await storage.delete(key: "Cultures");
     await storage.delete(key: "Fields");
-    await Fields();
+    await UpdateFields();
     await Cultures();
     await Partners();
   }

@@ -100,13 +100,15 @@ class MapSampleState extends State<MapSample> {
           leading: Icon(Icons.restore_from_trash),
           title: Text('Обновить данные'),
           onTap: () async {
-            _allPolygons = {};
             partners = [];
             fields = [];
             showLoader(context);
             await LocalStorage.RestoreData();
             Navigator.pop(context);
-            setState(() {});
+            setState(() {
+              _allPolygons = {};
+              _activePolygons = {};
+            });
           }),
     ]);
 
@@ -163,7 +165,6 @@ class MapSampleState extends State<MapSample> {
     user = await LocalStorage.User();
     try {
       fields = await LocalStorage.Fields();
-
     } catch (ex) {
       showErrorDialog(context, ex.toString());
     }
@@ -176,6 +177,7 @@ class MapSampleState extends State<MapSample> {
       await loadFields();
     }
     Set<Field> localFields = {};
+    _activePolygons = {};
 
     for (int i = 0; i < fields.length; i++) {
       var fieldJson = fields[i];
