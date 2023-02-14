@@ -163,6 +163,7 @@ class MapSampleState extends State<MapSample> {
     user = await LocalStorage.User();
     try {
       fields = await LocalStorage.Fields();
+
     } catch (ex) {
       showErrorDialog(context, ex.toString());
     }
@@ -251,7 +252,7 @@ class MapSampleState extends State<MapSample> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text("Робополе 2022"),
+        title: Text("Робополе 2023"),
         backgroundColor: Colors.deepOrangeAccent,
       ),
       drawer: Drawer(

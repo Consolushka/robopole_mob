@@ -50,7 +50,7 @@ class _FunctionalPageState extends State<FunctionalPage> {
 
     return Scaffold(
           appBar: AppBar(
-            title: const Text("Робополе 2022"),
+            title: const Text("Робополе 2023"),
             backgroundColor: Colors.deepOrangeAccent,
           ),
           body: Align(

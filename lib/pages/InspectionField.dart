@@ -353,12 +353,26 @@ class _InspectionFieldState extends State<InspectionField> {
     Navigator.pop(context);
 
     if (response.statusCode == 200) {
-      showOKDialog(context, "Осмотр поля проведен", this.resetState);
+      showOKDialog(context, "Осмотр поля проведен", this.moveToFunctionalSelection);
     } else {
       var error = Error.fromResponse(response);
       var errorMessage = "${error.Message} при обращаении к ${error.Path}";
       showErrorDialog(context, errorMessage);
     }
+  }
+
+  void moveToFunctionalSelection(){
+    imagePaths = [];
+    videoPaths = [];
+    audioPath = "";
+    audioDuration = "";
+    comment = "";
+
+    Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+            builder: (context) => const FunctionalPage()),
+            (route) => false);
   }
 
   void resetState() {

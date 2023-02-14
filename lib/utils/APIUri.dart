@@ -1,5 +1,6 @@
-String APIHost = "http://devapi.robopole.ru";
 // String APIHost = "http://192.168.1.10:7196";
+// String APIHost = "http://devapi.robopole.ru";
+String APIHost = "http://api.robopole.ru";
 
 String APIVersion = "/v2";
 String CulturesController = "/cultures";

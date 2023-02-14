@@ -61,7 +61,7 @@ class _AuthState extends State<Auth> {
 
     return Scaffold(
           appBar: AppBar(
-            title: Text("Робополе 2022"),
+            title: Text("Робополе 2023"),
             leading: Icon(Icons.android),
             backgroundColor: Colors.deepOrangeAccent,
           ),
